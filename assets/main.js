@@ -1,4 +1,4 @@
-const FORM_URL = "https://example.com";
+const FORM_URL = "https://formsubmit.co/contact.sksadventures@gmail.com";
 const DISCORD_INVITE_URL = "https://discord.gg/ZgydMte5SW";
 const CONTACT_EMAIL = "contact.sksadventures@gmail.com";
 const SAFETY_URL = FORM_URL;
