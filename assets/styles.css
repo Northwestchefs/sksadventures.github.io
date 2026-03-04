@@ -278,6 +278,45 @@ a:focus-visible {
   transform: translateX(-50%) translateY(0);
 }
 
+.form-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(17, 26, 43, 0.6);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(17, 26, 43, 0.8);
+  box-shadow: 0 0 0 3px rgba(127, 199, 255, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
 @media (min-width: 780px) {
   .card-grid {
     grid-template-columns: repeat(3, 1fr);
