@@ -76,19 +76,6 @@ function configureLinks() {
   if (handleDisplay) {
     handleDisplay.textContent = `Discord: ${DISCORD_HANDLE}`;
   }
-
-  // optionally embed the form if a real URL is provided
-  const embedContainer = document.getElementById("form-embed-container");
-  const iframe = document.getElementById("form-iframe");
-  if (embedContainer && iframe) {
-    if (!formNotSet) {
-      iframe.src = FORM_URL;
-      embedContainer.hidden = false;
-    } else {
-      embedContainer.hidden = true;
-      iframe.src = "";
-    }
-  }
 }
 
 function wireCopyHandle() {
