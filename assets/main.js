@@ -1,7 +1,7 @@
 const FORM_URL = "https://formsubmit.co/contact.sksadventures@gmail.com";
 const DISCORD_INVITE_URL = "https://discord.gg/ZgydMte5SW";
 const CONTACT_EMAIL = "contact.sksadventures@gmail.com";
-const SAFETY_URL = "https://northwestchefs.github.io/sksadventures.github.io/apply.html
+const SAFETY_URL = "apply.html";
 const DISCORD_HANDLE = "YourDiscordHere";
 
 const isPlaceholderUrl = (url) => url === "https://example.com";
