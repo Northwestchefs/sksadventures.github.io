@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thank You | SKS Adventures</title>
+    <meta name="description" content="Thank you for applying to SKS Adventures!" />
+    <link rel="icon" href="assets/img/favicon-placeholder.txt" />
+    <style>
+      :root {
+        --bg: #0b1220;
+        --bg-alt: #111a2b;
+        --text: #e6edf7;
+        --muted: #a9b4c7;
+        --border: #273245;
+        --ice: #7cc7ff;
+        --gold: #e1b65b;
+        --gold-deep: #bc9340;
+        --success: #9df7c8;
+        --radius: 14px;
+        --shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: var(--text);
+        background: radial-gradient(circle at top, #162744 0%, var(--bg) 55%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      a {
+        color: var(--ice);
+        text-decoration: none;
+      }
+
+      a:hover {
+        color: var(--gold);
+      }
+
+      .container {
+        width: 100%;
+        max-width: 600px;
+        text-align: center;
+      }
+
+      .content {
+        background: linear-gradient(175deg, rgba(17, 26, 43, 0.9), rgba(11, 18, 32, 0.9));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 40px 30px;
+      }
+
+      .success-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        background: linear-gradient(135deg, var(--success), var(--ice));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+      }
+
+      h1 {
+        font-size: 2rem;
+        margin: 20px 0 16px;
+        color: var(--text);
+      }
+
+      p {
+        color: var(--muted);
+        margin: 12px 0;
+        font-size: 1.05rem;
+      }
+
+      .message {
+        background: rgba(157, 247, 200, 0.1);
+        border: 1px solid rgba(157, 247, 200, 0.3);
+        border-radius: 8px;
+        padding: 16px;
+        margin: 24px 0;
+        color: var(--success);
+      }
+
+      .button {
+        display: inline-block;
+        padding: 12px 28px;
+        margin-top: 24px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+        color: #211505;
+        font-weight: 650;
+        text-decoration: none;
+        transition: 0.2s ease;
+        text-transform: uppercase;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+      }
+
+      .button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(225, 182, 91, 0.3);
+      }
+
+      .button:active {
+        transform: translateY(0);
+      }
+
+      @media (max-width: 600px) {
+        .content {
+          padding: 30px 20px;
+        }
+
+        h1 {
+          font-size: 1.6rem;
+        }
+
+        p {
+          font-size: 1rem;
+        }
+
+        .success-icon {
+          width: 60px;
+          height: 60px;
+          font-size: 30px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="content">
+        <div class="success-icon">✓</div>
+        <h1>Application Received!</h1>
+        <p>Thank you for applying to SKS Adventures.</p>
+        <div class="message">
+          <strong>Your application has been submitted successfully.</strong>
+          <p style="margin-top: 8px; margin-bottom: 0;">We'll review your application and be in touch soon via Discord.</p>
+        </div>
+        <p>In the meantime, feel free to join our Discord server to connect with the community and stay updated on campaign announcements.</p>
+        <a href="index.html" class="button">Return Home</a>
+      </div>
+    </div>
+  </body>
+</html>

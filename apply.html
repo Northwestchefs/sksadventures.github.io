@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Apply | SKS Adventures</title>
+    <meta name="description" content="Apply to join story-driven D&D campaigns with SKS Adventures." />
+    <link rel="icon" href="assets/img/favicon-placeholder.txt" />
+    <style>
+      :root {
+        --bg: #0b1220;
+        --bg-alt: #111a2b;
+        --panel: #15233f;
+        --text: #e6edf7;
+        --muted: #a9b4c7;
+        --border: #273245;
+        --ice: #7cc7ff;
+        --gold: #e1b65b;
+        --gold-deep: #bc9340;
+        --radius: 14px;
+        --shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        line-height: 1.6;
+        color: var(--text);
+        background: radial-gradient(circle at top, #162744 0%, var(--bg) 55%);
+        padding: 20px;
+      }
+
+      a {
+        color: var(--ice);
+        text-decoration: none;
+      }
+
+      a:hover {
+        color: var(--gold);
+      }
+
+      .skip-link {
+        position: absolute;
+        left: 8px;
+        top: -42px;
+        background: var(--ice);
+        color: #001020;
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+
+      .skip-link:focus-visible {
+        top: 8px;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 5vw, 2.5rem);
+        margin: 0 0 16px;
+        color: var(--text);
+        font-weight: 700;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        color: var(--muted);
+        margin: 0;
+      }
+
+      .form-panel {
+        background: linear-gradient(175deg, rgba(17, 26, 43, 0.9), rgba(11, 18, 32, 0.9));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-group label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .form-group input[type="text"],
+      .form-group input[type="email"],
+      .form-group select,
+      .form-group textarea {
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(17, 26, 43, 0.6);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 1rem;
+        line-height: 1.5;
+        transition: 0.2s ease;
+      }
+
+      .form-group input[type="text"]:focus,
+      .form-group input[type="email"]:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: var(--gold);
+        background: rgba(17, 26, 43, 0.8);
+        box-shadow: 0 0 0 3px rgba(225, 182, 91, 0.1);
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+
+      .instruction-text {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .checkbox-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .checkbox-item input[type="checkbox"] {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        cursor: pointer;
+        accent-color: var(--gold);
+      }
+
+      .checkbox-item label {
+        margin: 0;
+        cursor: pointer;
+        margin-bottom: 0;
+        font-weight: normal;
+      }
+
+      .checkbox-item input[type="checkbox"]:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+      }
+
+      .submit-button {
+        width: 100%;
+        padding: 14px 20px;
+        margin-top: 30px;
+        border: none;
+        border-radius: 999px;
+        background: linear-gradient(180deg, var(--gold), var(--gold-deep));
+        color: #211505;
+        font-weight: 650;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .submit-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(225, 182, 91, 0.3);
+      }
+
+      .submit-button:active {
+        transform: translateY(0);
+      }
+
+      .back-link {
+        display: inline-block;
+        margin-top: 30px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .back-link:hover {
+        color: var(--ice);
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 20px 16px;
+        }
+
+        .form-panel {
+          padding: 24px 16px;
+        }
+
+        h1 {
+          font-size: 1.8rem;
+        }
+
+        .subtitle {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#apply-form">Skip to form</a>
+
+    <div class="container">
+      <div class="header">
+        <h1>HERO APPLICATION</h1>
+        <p class="subtitle">
+          Apply to join story-driven D&D campaigns built on respect, creativity, and unforgettable adventures.
+        </p>
+      </div>
+
+      <div class="form-panel">
+        <form id="apply-form" method="POST" action="https://formsubmit.co/contact.sksadventures@gmail.com">
+          <!-- Hidden fields for FormSubmit -->
+          <input type="hidden" name="_subject" value="New SKS Adventures Application" />
+          <input type="hidden" name="_next" value="thanks.html" />
+
+          <!-- Age Confirmation -->
+          <div class="form-group">
+            <label for="age_confirmation">Confirm you are 18 or older *</label>
+            <p class="instruction-text">Type exactly: I confirm I am 18 or older</p>
+            <input type="text" id="age_confirmation" name="age_confirmation" required />
+          </div>
+
+          <!-- Session Fee Confirmation -->
+          <div class="form-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="payment_confirmation" name="payment_confirmation" required />
+              <label for="payment_confirmation">
+                I understand and agree to pay $10 per session prior to the session. *
+              </label>
+            </div>
+          </div>
+
+          <!-- Name -->
+          <div class="form-group">
+            <label for="name">What should we call you? *</label>
+            <input type="text" id="name" name="name" required />
+          </div>
+
+          <!-- Timezone -->
+          <div class="form-group">
+            <label for="timezone">What timezone are you in? *</label>
+            <input type="text" id="timezone" name="timezone" placeholder="e.g., America/Los_Angeles" required />
+          </div>
+
+          <!-- Discord Username -->
+          <div class="form-group">
+            <label for="discord_username">What is your Discord username? *</label>
+            <input type="text" id="discord_username" name="discord_username" required />
+          </div>
+
+          <!-- Campaign Interest -->
+          <div class="form-group">
+            <label for="campaign_interest">Which type of campaign interests you? *</label>
+            <select id="campaign_interest" name="campaign_interest" required>
+              <option value="">Select one</option>
+              <option value="Long Campaign">Long Campaign</option>
+              <option value="Short Adventure">Short Adventure</option>
+              <option value="One-Shot">One-Shot</option>
+              <option value="Not Sure Yet">Not Sure Yet</option>
+            </select>
+          </div>
+
+          <!-- D&D Experience Level -->
+          <div class="form-group">
+            <label for="experience_level">What is your D&D experience level? *</label>
+            <select id="experience_level" name="experience_level" required>
+              <option value="">Select one</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Experienced">Experienced</option>
+            </select>
+          </div>
+
+          <!-- Availability -->
+          <div class="form-group">
+            <label for="availability">What nights are you available?</label>
+            <textarea id="availability" name="availability" placeholder="e.g., Monday, Wednesday, Friday evenings"></textarea>
+          </div>
+
+          <!-- Playstyle Preferences -->
+          <div class="form-group">
+            <label>What do you enjoy most in a campaign?</label>
+            <div class="checkbox-group">
+              <div class="checkbox-item">
+                <input type="checkbox" id="playstyle_roleplay" name="playstyle" value="Roleplay" />
+                <label for="playstyle_roleplay">Roleplay</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="playstyle_combat" name="playstyle" value="Combat" />
+                <label for="playstyle_combat">Combat</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="playstyle_exploration" name="playstyle" value="Exploration" />
+                <label for="playstyle_exploration">Exploration</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="playstyle_puzzles" name="playstyle" value="Puzzles" />
+                <label for="playstyle_puzzles">Puzzles</label>
+              </div>
+              <div class="checkbox-item">
+                <input type="checkbox" id="playstyle_story" name="playstyle" value="Story" />
+                <label for="playstyle_story">Story</label>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-button">Submit Application</button>
+        </form>
+
+        <div style="text-align: center;">
+          <a href="index.html" class="back-link">← Back to SKS Adventures</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
