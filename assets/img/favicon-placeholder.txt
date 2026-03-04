@@ -1,0 +1,2 @@
+Placeholder favicon file.
+Replace with a real favicon.ico or update the <link rel="icon"> in index.html when ready.

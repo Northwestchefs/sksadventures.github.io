@@ -1,88 +1,96 @@
-// Core configuration for contact and signup links.
 const FORM_URL = "https://example.com";
 const DISCORD_INVITE_URL = "https://example.com";
 const CONTACT_EMAIL = "mailto:example@example.com";
+const SAFETY_URL = FORM_URL;
+const DISCORD_HANDLE = "YourDiscordHere";
 
-const isValidUrl = (value) => {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:";
-  } catch {
-    return false;
+const isPlaceholderUrl = (url) => url === "https://example.com";
+
+function setDisabledLink(link, disabled) {
+  if (!link) return;
+  if (disabled) {
+    link.setAttribute("aria-disabled", "true");
+    link.setAttribute("tabindex", "-1");
+  } else {
+    link.removeAttribute("aria-disabled");
+    link.removeAttribute("tabindex");
   }
-};
+}
 
-const setHref = (id, url) => {
-  const el = document.getElementById(id);
-  if (el) el.setAttribute("href", url);
-};
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  window.setTimeout(() => toast.classList.remove("show"), 1700);
+}
 
-const setFormLinks = () => {
-  const status = document.getElementById("form-url-status");
-  if (!isValidUrl(FORM_URL) || FORM_URL.includes("example.com")) {
-    if (status) {
-      status.textContent = "Update FORM_URL in assets/main.js before publishing applications.";
-    }
-    return;
-  }
-
-  ["apply-link-hero", "waitlist-link-hero", "apply-link-section", "footer-apply-link"].forEach((id) => {
-    setHref(id, FORM_URL);
-  });
-
-  if (status) {
-    status.textContent = "Applications are open.";
-  }
-};
-
-const setContactLinks = () => {
-  if (isValidUrl(DISCORD_INVITE_URL)) {
-    setHref("discord-link", DISCORD_INVITE_URL);
-  }
-
-  if (isValidUrl(CONTACT_EMAIL)) {
-    setHref("footer-contact-link", CONTACT_EMAIL);
-  }
-};
-
-const setupCopyDiscordHandle = () => {
-  const button = document.getElementById("copy-discord-handle");
-  const copyStatus = document.getElementById("copy-status");
-  if (!button || !navigator.clipboard) return;
-
-  button.addEventListener("click", async () => {
-    const handle = button.dataset.handle || "";
-    try {
-      await navigator.clipboard.writeText(handle);
-      if (copyStatus) copyStatus.textContent = `Copied ${handle}`;
-    } catch {
-      if (copyStatus) copyStatus.textContent = "Copy failed. Please copy manually.";
-    }
-  });
-};
-
-const setupSmoothScroll = () => {
-  document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener("click", (event) => {
-      const targetId = anchor.getAttribute("href");
+function wireSmoothScroll() {
+  const links = document.querySelectorAll('a[href^="#"]');
+  links.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const targetId = link.getAttribute("href");
       if (!targetId || targetId === "#") return;
-
       const target = document.querySelector(targetId);
       if (!target) return;
-
       event.preventDefault();
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
-};
+}
 
-const setCurrentYear = () => {
-  const year = document.getElementById("year");
-  if (year) year.textContent = new Date().getFullYear();
-};
+function configureLinks() {
+  const applyLinks = document.querySelectorAll(".js-apply-link, .js-waitlist-link");
+  const discordLinks = document.querySelectorAll(".js-discord-link");
+  const warningPill = document.getElementById("form-warning");
+  const safetyLink = document.getElementById("safety-link");
+  const contactLink = document.getElementById("contact-link");
+  const handleDisplay = document.getElementById("discord-handle-display");
 
-setFormLinks();
-setContactLinks();
-setupCopyDiscordHandle();
-setupSmoothScroll();
-setCurrentYear();
+  const formNotSet = isPlaceholderUrl(FORM_URL);
+  const discordNotSet = isPlaceholderUrl(DISCORD_INVITE_URL);
+
+  applyLinks.forEach((link) => {
+    link.setAttribute("href", FORM_URL);
+    setDisabledLink(link, formNotSet);
+  });
+
+  if (warningPill) {
+    warningPill.hidden = !formNotSet;
+  }
+
+  discordLinks.forEach((link) => {
+    link.setAttribute("href", DISCORD_INVITE_URL);
+    setDisabledLink(link, discordNotSet);
+  });
+
+  if (safetyLink) {
+    safetyLink.setAttribute("href", SAFETY_URL);
+  }
+
+  if (contactLink) {
+    contactLink.setAttribute("href", CONTACT_EMAIL);
+  }
+
+  if (handleDisplay) {
+    handleDisplay.textContent = `Discord: ${DISCORD_HANDLE}`;
+  }
+}
+
+function wireCopyHandle() {
+  const copyBtn = document.getElementById("copy-discord");
+  if (!copyBtn) return;
+
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(DISCORD_HANDLE);
+      showToast("Discord handle copied.");
+    } catch {
+      showToast("Could not copy automatically.");
+    }
+  });
+}
+
+wireSmoothScroll();
+configureLinks();
+wireCopyHandle();
