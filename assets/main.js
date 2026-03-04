@@ -40,7 +40,8 @@ function wireSmoothScroll() {
 }
 
 function configureLinks() {
-  const applyLinks = document.querySelectorAll(".js-apply-link, .js-waitlist-link");
+  const applyLinks = document.querySelectorAll(".js-apply-link");
+  const waitlistLinks = document.querySelectorAll(".js-waitlist-link");
   const discordLinks = document.querySelectorAll(".js-discord-link");
   const warningPill = document.getElementById("form-warning");
   const safetyLink = document.getElementById("safety-link");
@@ -50,7 +51,14 @@ function configureLinks() {
   const formNotSet = isPlaceholderUrl(FORM_URL);
   const discordNotSet = isPlaceholderUrl(DISCORD_INVITE_URL);
 
+  // Point main "Apply to Play" actions to the local application page
   applyLinks.forEach((link) => {
+    link.setAttribute("href", "/sksadventures.github.io/apply.html");
+    setDisabledLink(link, false);
+  });
+
+  // Keep waitlist links pointing at the configured form URL (disabled if unset)
+  waitlistLinks.forEach((link) => {
     link.setAttribute("href", FORM_URL);
     setDisabledLink(link, formNotSet);
   });
