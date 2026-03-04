@@ -151,6 +151,20 @@
           <a id="apply-button" class="btn btn-primary btn-large js-apply-link" href="https://example.com">Apply to Play</a>
           <p class="muted">You can use Google Forms or Tally for your application intake.</p>
           <p id="form-warning" class="warning-pill" role="status" aria-live="polite" hidden>Form link not set yet.</p>
+
+          <!-- If you prefer to embed the form directly, the iframe will be
+               populated by JS when FORM_URL is configured. It remains hidden
+               while the default placeholder URL is in place. -->
+          <div id="form-embed-container" hidden>
+            <iframe
+              id="form-iframe"
+              src=""
+              frameborder="0"
+              width="100%"
+              height="600"
+              title="Application Form"
+            ></iframe>
+          </div>
         </div>
       </section>
 
