@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "datasets": {
+    "srd": {
+      "path": "reference/srd",
+      "description": "System Reference Document rules and structured data.",
+      "primarySource": "https://github.com/BTMorton/dnd-5e-srd",
+      "repositories": [
+        {
+          "name": "dnd-5e-srd",
+          "path": "reference/srd/dnd-5e-srd",
+          "url": "https://github.com/BTMorton/dnd-5e-srd"
+        }
+      ]
+    },
+    "apiDatabase": {
+      "path": "reference/api-database",
+      "description": "Structured monster, spell, and item datasets for tool lookups.",
+      "primarySource": "https://github.com/5e-bits/5e-database",
+      "repositories": [
+        {
+          "name": "5e-database",
+          "path": "reference/api-database/5e-database",
+          "url": "https://github.com/5e-bits/5e-database"
+        }
+      ]
+    },
+    "foundry": {
+      "path": "reference/foundry",
+      "description": "Foundry VTT API typings, docs, and implementation examples.",
+      "primarySource": "https://github.com/League-of-Foundry-Developers/foundry-vtt-types",
+      "repositories": [
+        {
+          "name": "foundry-vtt-types",
+          "path": "reference/foundry/foundry-vtt-types",
+          "url": "https://github.com/League-of-Foundry-Developers/foundry-vtt-types"
+        }
+      ]
+    },
+    "foundryDnd5e": {
+      "path": "reference/foundry-dnd5e",
+      "description": "Foundry DnD5e system data model and compendium definitions.",
+      "primarySource": "https://github.com/foundryvtt/dnd5e",
+      "repositories": [
+        {
+          "name": "dnd5e",
+          "path": "reference/foundry-dnd5e/dnd5e",
+          "url": "https://github.com/foundryvtt/dnd5e"
+        }
+      ]
+    }
+  }
+}
