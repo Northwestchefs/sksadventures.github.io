@@ -1,3 +1,6 @@
 [submodule "reference/srd/dnd-5e-srd"]
 	path = reference/srd/dnd-5e-srd
 	url = https://github.com/BTMorton/dnd-5e-srd
+[submodule "reference/api-database/5e-database"]
+	path = reference/api-database/5e-database
+	url = https://github.com/5e-bits/5e-database
