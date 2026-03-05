@@ -377,220 +377,50 @@
     };
   }
 
-  function buildFoundryPayload() {
+  function buildEncounterExportPayload() {
     if (!lastGenerated || !lastGenerated.encounters.length) {
       return null;
     }
 
-    const encounter = lastGenerated.encounters[0];
-    const monsters = encounter.roster.flatMap((monster) => Array.from({ length: monster.quantity }, (_, idx) => {
+    const bestEncounter = lastGenerated.encounters[0];
+    const hooks = lastGenerated.hooks;
+    const monsters = bestEncounter.roster.map((monster) => {
       const estimated = estimateMonsterStats(monster.cr);
       return {
-        name: monster.quantity > 1 ? `${monster.name} ${idx + 1}` : monster.name,
-        baseName: monster.name,
+        name: monster.name,
+        count: monster.quantity,
         cr: monster.cr,
-        xp: monster.xp,
-        estimated
+        hp: estimated.hp,
+        ac: estimated.ac,
+        init: estimated.init,
+        xp: monster.xp
       };
-    }));
+    });
 
     return {
-      exportMeta: {
-        source: 'SKS Adventures Encounter Generator',
-        foundryTarget: 'V13 Build 351',
-        systemTarget: 'dnd5e 5.2.4',
-        createdAt: new Date().toISOString()
+      meta: {
+        generator: 'SKS Encounter Generator',
+        foundryVersion: 'v13 (Build 351+)',
+        system: 'dnd5e 5.2.x',
+        exportedAt: new Date().toISOString()
       },
-      context: lastGenerated.context,
-      thresholds: lastGenerated.thresholds,
       encounter: {
         name: `SKS ${lastGenerated.context.environment.toUpperCase()} ${lastGenerated.context.difficulty.toUpperCase()} Encounter`,
-        adjustedXp: encounter.adjustedXp,
-        rawXp: encounter.rawXp,
-        creatureCount: encounter.creatureCount,
-        monsters
+        difficulty: lastGenerated.context.difficulty,
+        environment: lastGenerated.context.environment,
+        partyLevel: lastGenerated.context.level,
+        partySize: lastGenerated.context.size,
+        adjustedXp: bestEncounter.adjustedXp,
+        rawXp: bestEncounter.rawXp
       },
-      hooks: lastGenerated.hooks
-    };
-  }
-
-  function buildFoundryImportMacroScript(payload) {
-    const payloadText = JSON.stringify(payload, null, 2);
-    return `const payload = ${payloadText};
-
-const ensureFolder = async (name, type) => {
-  const existing = game.folders.find((f) => f.type === type && f.name === name);
-  return existing ?? Folder.create({ name, type, color: '#7cc7ff' });
-};
-
-const actorFolder = await ensureFolder('SKS Encounters', 'Actor');
-const journalFolder = await ensureFolder('SKS Encounters', 'JournalEntry');
-
-const actors = [];
-for (const monster of payload.encounter.monsters) {
-  const actor = await Actor.create({
-    name: monster.name,
-    type: 'npc',
-    img: 'icons/svg/mystery-man.svg',
-    folder: actorFolder.id,
-    system: {
-      details: { cr: monster.cr },
-      attributes: {
-        ac: { value: monster.estimated.ac },
-        hp: { value: monster.estimated.hp, max: monster.estimated.hp },
-        init: { bonus: monster.estimated.init }
-      }
-    },
-    prototypeToken: {
-      name: monster.name,
-      disposition: -1,
-      actorLink: false,
-      randomImg: false
-    }
-  });
-  actors.push({ actor, initBonus: monster.estimated.init });
-}
-
-let scene = canvas?.scene ?? game.scenes.current;
-if (!scene) {
-  scene = await Scene.create({
-    name: payload.encounter.name,
-    width: 3000,
-    height: 2000,
-    grid: { type: 1, size: 100 }
-  });
-}
-
-const tokenDocs = actors.map(({ actor }, index) => ({
-  name: actor.name,
-  actorId: actor.id,
-  x: 400 + (index % 6) * 160,
-  y: 400 + Math.floor(index / 6) * 160,
-  disposition: -1
-}));
-
-const createdTokens = await scene.createEmbeddedDocuments('Token', tokenDocs);
-let combat = game.combats.viewed;
-if (!combat || combat.scene?.id !== scene.id) {
-  combat = await Combat.create({ scene: scene.id, active: true });
-}
-
-const combatants = await combat.createEmbeddedDocuments('Combatant', createdTokens.map((token) => ({
-  tokenId: token.id,
-  actorId: token.actorId
-})));
-
-await Promise.all(combatants.map((combatant, index) => {
-  const initBonus = actors[index]?.initBonus ?? 0;
-  const initiative = Math.floor(Math.random() * 20) + 1 + initBonus;
-  return combatant.update({ initiative });
-}));
-
-const hookList = payload.hooks;
-const journalContent = \
-  '<h2>' + payload.encounter.name + '</h2>' +
-  '<p><strong>Target Difficulty:</strong> ' + payload.context.difficulty.toUpperCase() + '</p>' +
-  '<p><strong>Environment:</strong> ' + payload.context.environment + '</p>' +
-  '<p><strong>Adjusted XP:</strong> ' + payload.encounter.adjustedXp.toLocaleString() + '</p>' +
-  '<h3>Treasure Ideas</h3><ul>' + hookList.treasureIdeas.map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
-  '<h3>Narrative Hooks</h3><ul>' + hookList.narrativeIdeas.map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
-  '<h3>Boss Phases</h3>' +
-  '<p><strong>Boss:</strong> ' + hookList.bossChassis + ' (' + hookList.bossBehavior + ')</p>' +
-  '<ol>' +
-  '<li><strong>Phase 1:</strong> Establish pressure and test player positioning.</li>' +
-  '<li><strong>Phase 2:</strong> At 60% HP, boss ' + hookList.bossPhaseTwo + '.</li>' +
-  '<li><strong>Phase 3:</strong> At 25% HP, boss ' + hookList.bossPhaseThree + ' and risks everything.</li>' +
-  '</ol>' +
-  '<p><strong>Lair Actions:</strong> ' + hookList.lairActions.join('; ') + '</p>' +
-  '<h3>Environment Pack</h3>' +
-  '<ul><li><strong>Hazard:</strong> ' + hookList.hazard + '</li><li><strong>Objective:</strong> ' + hookList.objective + '</li><li><strong>Twist:</strong> ' + hookList.twist + '</li></ul>';
-
-await JournalEntry.create({
-  name: payload.encounter.name + ' - Encounter Brief',
-  folder: journalFolder.id,
-  pages: [{
-    name: 'Encounter Brief',
-    type: 'text',
-    text: { content: journalContent, format: 1 }
-  }]
-});
-
-ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, and journal are ready.');
-`;
-  }
-
-  function buildFoundryMacroDocument(payload) {
-    return {
-      name: `Import ${payload.encounter.name}`,
-      type: 'script',
-      scope: 'global',
-      img: 'icons/svg/dice-target.svg',
-      command: buildFoundryImportMacroScript(payload),
-      folder: null,
-      flags: {
-        dnd5e: {
-          effectMacro: false
-        }
-      },
-      ownership: {
-        default: 0
-      }
-    };
-  }
-
-  function buildFoundryJournalDocument(payload) {
-    const hookList = payload.hooks;
-    const journalContent = [
-      `<p><strong>Target Difficulty:</strong> ${payload.context.difficulty.toUpperCase()}</p>`,
-      `<p><strong>Environment:</strong> ${payload.context.environment}</p>`,
-      `<p><strong>Adjusted XP:</strong> ${payload.encounter.adjustedXp.toLocaleString()}</p>`,
-      `<h2>Treasure Ideas</h2><ul>${hookList.treasureIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`,
-      `<h2>Narrative Hooks</h2><ul>${hookList.narrativeIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`,
-      '<h2>Boss Phases</h2>',
-      `<p><strong>Boss:</strong> ${hookList.bossChassis} (${hookList.bossBehavior})</p>`,
-      '<ol>',
-      '<li><strong>Phase 1:</strong> Establish pressure and test player positioning.</li>',
-      `<li><strong>Phase 2:</strong> At 60% HP, boss ${hookList.bossPhaseTwo}.</li>`,
-      `<li><strong>Phase 3:</strong> At 25% HP, boss ${hookList.bossPhaseThree} and risks everything.</li>`,
-      '</ol>',
-      `<p><strong>Lair Actions:</strong> ${hookList.lairActions.join('; ')}</p>`,
-      '<h2>Environment Pack</h2>',
-      `<ul><li><strong>Hazard:</strong> ${hookList.hazard}</li><li><strong>Objective:</strong> ${hookList.objective}</li><li><strong>Twist:</strong> ${hookList.twist}</li></ul>`
-    ].join('');
-
-    return {
-      name: `${payload.encounter.name} - Encounter Brief`,
-      folder: null,
-      pages: [{
-        name: 'Encounter Brief',
-        type: 'text',
-        title: {
-          show: true,
-          level: 1
-        },
-        text: {
-          format: 1,
-          content: journalContent
-        },
-        sort: 0,
-        flags: {},
-        system: {},
-        ownership: {
-          default: -1
-        }
-      }],
-      categories: [],
-      flags: {
-        world: {
-          sksEncounterGenerator: {
-            environment: payload.context.environment,
-            difficulty: payload.context.difficulty,
-            adjustedXp: payload.encounter.adjustedXp
-          }
-        }
-      },
-      ownership: {
-        default: 0
+      monsters,
+      journal: {
+        treasure: hooks?.treasureIdeas || [],
+        narrativeHooks: hooks?.narrativeIdeas || [],
+        bossBehavior: hooks ? `${hooks.bossChassis} ${hooks.bossBehavior}` : '',
+        bossPhases: hooks ? [hooks.bossPhaseTwo, hooks.bossPhaseThree] : [],
+        lairActions: hooks?.lairActions || [],
+        environmentHazards: hooks ? [hooks.hazard, hooks.objective, hooks.twist] : []
       }
     };
   }
@@ -608,7 +438,7 @@ ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, a
   }
 
   function exportFoundryEncounter() {
-    const payload = buildFoundryPayload();
+    const payload = buildEncounterExportPayload();
     if (!payload) {
       if (exportStatusEl) {
         exportStatusEl.textContent = 'Generate encounters before exporting.';
@@ -616,18 +446,10 @@ ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, a
       return;
     }
 
-    const slug = `${payload.context.environment}-${payload.context.difficulty}-${Date.now()}`;
-    const macroScript = buildFoundryImportMacroScript(payload);
-    const macroDocument = buildFoundryMacroDocument(payload);
-    const journalDocument = buildFoundryJournalDocument(payload);
-
-    downloadFile(`sks-foundry-import-${slug}.js`, macroScript, 'text/javascript');
-    downloadFile(`sks-foundry-macro-${slug}.json`, JSON.stringify(macroDocument, null, 2), 'application/json');
-    downloadFile(`sks-foundry-journal-${slug}.json`, JSON.stringify(journalDocument, null, 2), 'application/json');
-    downloadFile(`sks-foundry-payload-${slug}.json`, JSON.stringify(payload, null, 2), 'application/json');
+    downloadFile('sks-encounter.json', JSON.stringify(payload, null, 2), 'application/json');
 
     if (exportStatusEl) {
-      exportStatusEl.textContent = 'Downloaded pretty Foundry exports (.js macro script + macro JSON + journal JSON + payload JSON).';
+      exportStatusEl.textContent = 'Downloaded sks-encounter.json. Run foundry/sks-encounter-importer-macro.js inside Foundry to import it.';
     }
   }
 
@@ -674,7 +496,7 @@ ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, a
       exportBtnEl.disabled = options.length === 0;
     }
     if (exportStatusEl) {
-      exportStatusEl.textContent = options.length ? 'Ready to export best encounter for Foundry V13.' : 'No encounter available to export.';
+      exportStatusEl.textContent = options.length ? 'Ready to download sks-encounter.json for the Foundry v13 importer macro.' : 'No encounter available to export.';
     }
   }
 
