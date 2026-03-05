@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monster Statblock Search | SKS Adventures</title>
+    <meta
+      name="description"
+      content="Search SRD monsters by name and view full D&D 5e statblocks with abilities, actions, and legendary actions."
+    />
+    <meta property="og:title" content="Monster Statblock Search | SKS Adventures" />
+    <meta
+      property="og:description"
+      content="Instantly find SRD monsters and render complete statblocks for your D&D sessions."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://northwestchefs.github.io/sksadventures.github.io/tools/monster-search.html" />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <style>
+      .monster-page {
+        width: min(1100px, 92vw);
+        margin: 0 auto;
+        padding: 20px 0 48px;
+      }
+
+      .home-button {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 16px;
+        text-decoration: none;
+      }
+
+      .search-card,
+      .statblock-card {
+        background:
+          radial-gradient(circle at top right, rgba(124, 199, 255, 0.08), transparent 50%),
+          linear-gradient(175deg, rgba(17, 26, 43, 0.95), rgba(11, 18, 32, 0.96));
+        border: 1px solid rgba(124, 199, 255, 0.25);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .search-card {
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+
+      .search-row {
+        position: relative;
+      }
+
+      #monster-search {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: rgba(4, 10, 20, 0.8);
+        color: var(--text);
+        padding: 12px 14px;
+        font-size: 1rem;
+      }
+
+      #monster-search:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+      }
+
+      #suggestions {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        max-height: 270px;
+        overflow: auto;
+        border-radius: 12px;
+        border: 1px solid rgba(124, 199, 255, 0.2);
+        background: rgba(6, 12, 22, 0.98);
+      }
+
+      .suggestion-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .suggestion-item:hover,
+      .suggestion-item:focus-visible {
+        background: rgba(225, 182, 91, 0.2);
+        color: #ffe1a2;
+      }
+
+      .hint {
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      .status {
+        min-height: 1.5rem;
+        margin-top: 8px;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: var(--danger-text);
+      }
+
+      .statblock-card {
+        padding: 22px;
+      }
+
+      .statblock-header {
+        border-bottom: 1px solid rgba(225, 182, 91, 0.35);
+        margin-bottom: 14px;
+      }
+
+      .statblock-header h2 {
+        margin-bottom: 4px;
+      }
+
+      .statblock-subtitle {
+        color: var(--gold);
+        margin-bottom: 12px;
+      }
+
+      .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .quick-stats .cardlet,
+      .ability-item {
+        background: rgba(17, 35, 63, 0.55);
+        border: 1px solid rgba(124, 199, 255, 0.2);
+        border-radius: 10px;
+        padding: 10px;
+      }
+
+      .ability-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .ability-item {
+        text-align: center;
+      }
+
+      .ability-item strong {
+        display: block;
+        color: var(--gold);
+      }
+
+      .section-title {
+        color: var(--ice);
+        margin: 18px 0 8px;
+      }
+
+      .feature-list {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .feature-list li + li {
+        margin-top: 8px;
+      }
+
+      .empty-state {
+        color: var(--muted);
+        padding: 22px;
+        text-align: center;
+      }
+
+
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-width: 880px) {
+        .ability-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 480px) {
+        .ability-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <main id="main-content" class="monster-page">
+      <a class="btn btn-secondary home-button" href="index.html">← Back to Tools</a>
+      <section class="search-card">
+        <h1>Monster Statblock Search</h1>
+        <p>Search D&amp;D SRD monsters by name and click a suggestion to load the full statblock.</p>
+
+        <div class="search-row">
+          <label for="monster-search" class="visually-hidden">Search monsters by name</label>
+          <input id="monster-search" type="search" autocomplete="off" placeholder="Try: goblin, dragon, aboleth..." />
+          <ul id="suggestions" hidden aria-label="Monster suggestions"></ul>
+        </div>
+
+        <p class="hint">Type at least 2 letters to see suggestions.</p>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="statblock" class="statblock-card" aria-live="polite">
+        <div class="empty-state">Start typing a monster name to view a statblock.</div>
+      </section>
+    </main>
+
+    <script>
+      const MONSTER_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/monsters';
+      const API_BASE_URL = 'https://www.dnd5eapi.co';
+      const CACHE_KEY = 'sks-monster-list-v1';
+
+      const searchInput = document.getElementById('monster-search');
+      const suggestionsEl = document.getElementById('suggestions');
+      const statusEl = document.getElementById('status');
+      const statblockEl = document.getElementById('statblock');
+
+      let monsterList = [];
+
+      function setStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle('error', isError);
+      }
+
+      function formatModifier(score) {
+        const modifier = Math.floor((score - 10) / 2);
+        return `${modifier >= 0 ? '+' : ''}${modifier}`;
+      }
+
+      function formatArmorClass(armorClass) {
+        if (Array.isArray(armorClass)) {
+          return armorClass.map((item) => `${item.value}${item.type ? ` (${item.type})` : ''}`).join(', ');
+        }
+
+        if (typeof armorClass === 'number') {
+          return String(armorClass);
+        }
+
+        return '—';
+      }
+
+      function formatSpeed(speed) {
+        if (!speed || typeof speed !== 'object') {
+          return '—';
+        }
+
+        return Object.entries(speed)
+          .map(([kind, value]) => `${kind}: ${value}`)
+          .join(', ');
+      }
+
+      function renderFeatureList(items) {
+        if (!Array.isArray(items) || items.length === 0) {
+          return '<p>None listed.</p>';
+        }
+
+        return `
+          <ul class="feature-list">
+            ${items
+              .map((item) => `<li><strong>${item.name}.</strong> ${item.desc || 'No description.'}</li>`)
+              .join('')}
+          </ul>
+        `;
+      }
+
+      function renderStatblock(monster) {
+        statblockEl.innerHTML = `
+          <div class="statblock-header">
+            <h2>${monster.name}</h2>
+            <p class="statblock-subtitle">${monster.size} ${monster.type}, ${monster.alignment}</p>
+          </div>
+
+          <div class="quick-stats">
+            <div class="cardlet"><strong>Armor Class</strong><br />${formatArmorClass(monster.armor_class)}</div>
+            <div class="cardlet"><strong>Hit Points</strong><br />${monster.hit_points ?? '—'}</div>
+            <div class="cardlet"><strong>Speed</strong><br />${formatSpeed(monster.speed)}</div>
+          </div>
+
+          <div class="ability-grid" aria-label="Ability scores">
+            ${[
+              ['STR', monster.strength],
+              ['DEX', monster.dexterity],
+              ['CON', monster.constitution],
+              ['INT', monster.intelligence],
+              ['WIS', monster.wisdom],
+              ['CHA', monster.charisma],
+            ]
+              .map(
+                ([name, value]) => `
+                  <div class="ability-item">
+                    <strong>${name}</strong>
+                    <span>${value ?? '—'} (${value != null ? formatModifier(value) : '—'})</span>
+                  </div>
+                `,
+              )
+              .join('')}
+          </div>
+
+          <h3 class="section-title">Special Abilities</h3>
+          ${renderFeatureList(monster.special_abilities)}
+
+          <h3 class="section-title">Actions</h3>
+          ${renderFeatureList(monster.actions)}
+
+          <h3 class="section-title">Legendary Actions</h3>
+          ${renderFeatureList(monster.legendary_actions)}
+        `;
+      }
+
+      async function loadMonsterList() {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              monsterList = parsed;
+              setStatus(`Loaded ${parsed.length} monsters from local cache.`);
+              return;
+            }
+          } catch {
+            localStorage.removeItem(CACHE_KEY);
+          }
+        }
+
+        setStatus('Loading monster list...');
+
+        const response = await fetch(MONSTER_LIST_ENDPOINT);
+        if (!response.ok) {
+          throw new Error('Unable to load monster list.');
+        }
+
+        const data = await response.json();
+        monsterList = data.results || [];
+        localStorage.setItem(CACHE_KEY, JSON.stringify(monsterList));
+        setStatus(`Loaded ${monsterList.length} monsters.`);
+      }
+
+      function renderSuggestions(matches) {
+        suggestionsEl.innerHTML = '';
+
+        if (matches.length === 0) {
+          suggestionsEl.hidden = true;
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        matches.forEach((monster) => {
+          const li = document.createElement('li');
+          li.className = 'suggestion-item';
+          li.tabIndex = 0;
+          li.textContent = monster.name;
+          li.dataset.url = monster.url;
+          li.addEventListener('click', () => selectMonster(monster));
+          li.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              selectMonster(monster);
+            }
+          });
+          fragment.appendChild(li);
+        });
+
+        suggestionsEl.appendChild(fragment);
+        suggestionsEl.hidden = false;
+      }
+
+      function onSearchInput() {
+        const query = searchInput.value.trim().toLowerCase();
+
+        if (query.length < 2) {
+          renderSuggestions([]);
+          return;
+        }
+
+        const matches = monsterList
+          .filter((monster) => monster.name.toLowerCase().includes(query))
+          .slice(0, 12);
+
+        renderSuggestions(matches);
+      }
+
+      async function selectMonster(monster) {
+        suggestionsEl.hidden = true;
+        searchInput.value = monster.name;
+        setStatus(`Loading ${monster.name}...`);
+
+        try {
+          const response = await fetch(`${API_BASE_URL}${monster.url}`);
+          if (!response.ok) {
+            throw new Error('Unable to load monster details.');
+          }
+
+          const details = await response.json();
+          renderStatblock(details);
+          setStatus(`Showing ${details.name}.`);
+        } catch (error) {
+          setStatus(error.message || 'Something went wrong while loading monster details.', true);
+        }
+      }
+
+      searchInput.addEventListener('input', onSearchInput);
+      document.addEventListener('click', (event) => {
+        if (!suggestionsEl.contains(event.target) && event.target !== searchInput) {
+          suggestionsEl.hidden = true;
+        }
+      });
+
+      (async function init() {
+        try {
+          await loadMonsterList();
+        } catch (error) {
+          setStatus(error.message || 'Could not initialize monster data.', true);
+        }
+      })();
+    </script>
+  </body>
+</html>
