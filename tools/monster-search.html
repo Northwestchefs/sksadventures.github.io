@@ -120,6 +120,24 @@
         margin-bottom: 12px;
       }
 
+      .difficulty-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .difficulty-stat {
+        background: rgba(225, 182, 91, 0.12);
+        border: 1px solid rgba(225, 182, 91, 0.35);
+        border-radius: 10px;
+        padding: 8px 10px;
+      }
+
+      .difficulty-stat strong {
+        color: #ffe1a2;
+      }
+
       .quick-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -265,6 +283,32 @@
           .join(', ');
       }
 
+      function formatChallengeRating(challengeRating) {
+        const fractionMap = {
+          0.125: '1/8',
+          0.25: '1/4',
+          0.5: '1/2',
+        };
+
+        if (challengeRating in fractionMap) {
+          return fractionMap[challengeRating];
+        }
+
+        if (typeof challengeRating === 'number' || typeof challengeRating === 'string') {
+          return String(challengeRating);
+        }
+
+        return '—';
+      }
+
+      function formatXp(xp) {
+        if (typeof xp === 'number' || typeof xp === 'string') {
+          return `${xp} XP`;
+        }
+
+        return '—';
+      }
+
       function renderFeatureList(items) {
         if (!Array.isArray(items) || items.length === 0) {
           return '<p>None listed.</p>';
@@ -284,6 +328,11 @@
           <div class="statblock-header">
             <h2>${monster.name}</h2>
             <p class="statblock-subtitle">${monster.size} ${monster.type}, ${monster.alignment}</p>
+
+            <div class="difficulty-row" aria-label="Challenge rating and experience points">
+              <div class="difficulty-stat"><strong>CR:</strong> ${formatChallengeRating(monster.challenge_rating)}</div>
+              <div class="difficulty-stat"><strong>XP:</strong> ${formatXp(monster.xp)}</div>
+            </div>
           </div>
 
           <div class="quick-stats">
@@ -364,7 +413,7 @@
           const li = document.createElement('li');
           li.className = 'suggestion-item';
           li.tabIndex = 0;
-          li.textContent = monster.name;
+          li.textContent = `${monster.name}${monster.challenge_rating != null ? ` — CR ${formatChallengeRating(monster.challenge_rating)}` : ''}`;
           li.dataset.url = monster.url;
           li.addEventListener('click', () => selectMonster(monster));
           li.addEventListener('keydown', (event) => {
@@ -407,6 +456,9 @@
           }
 
           const details = await response.json();
+          if (monster && details.challenge_rating != null) {
+            monster.challenge_rating = details.challenge_rating;
+          }
           renderStatblock(details);
           setStatus(`Showing ${details.name}.`);
         } catch (error) {
