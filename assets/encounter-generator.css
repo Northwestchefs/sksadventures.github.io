@@ -1,0 +1,133 @@
+.enc-gen-page {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  padding: 20px 0 56px;
+  display: grid;
+  gap: 16px;
+}
+
+.enc-gen-hero {
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(225, 182, 91, 0.14), transparent 52%),
+    radial-gradient(circle at left, rgba(124, 199, 255, 0.1), transparent 38%),
+    linear-gradient(165deg, rgba(21, 30, 49, 0.95), rgba(10, 18, 31, 0.96));
+  border: 1px solid rgba(225, 182, 91, 0.3);
+}
+
+.enc-gen-kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+  color: var(--gold);
+}
+
+.enc-gen-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 16px;
+}
+
+.enc-gen-controls,
+.enc-gen-output,
+.enc-gen-placeholder {
+  padding: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(124, 199, 255, 0.09), transparent 56%),
+    linear-gradient(180deg, rgba(17, 26, 43, 0.96), rgba(10, 17, 30, 0.97));
+  border: 1px solid rgba(124, 199, 255, 0.24);
+}
+
+.enc-field-grid {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.enc-field-grid label {
+  display: grid;
+  gap: 5px;
+  color: var(--ice);
+  font-weight: 600;
+}
+
+.enc-field-grid input,
+.enc-field-grid select {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(7, 12, 24, 0.85);
+  color: var(--text);
+  padding: 10px 12px;
+}
+
+.enc-status {
+  min-height: 1.2rem;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.enc-summary {
+  margin: 10px 0 14px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(225, 182, 91, 0.3);
+  background: rgba(225, 182, 91, 0.1);
+}
+
+.enc-summary.placeholder {
+  color: var(--muted);
+  border-color: rgba(124, 199, 255, 0.18);
+  background: rgba(17, 35, 63, 0.38);
+}
+
+.enc-results {
+  display: grid;
+  gap: 12px;
+}
+
+.encounter-card {
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid rgba(124, 199, 255, 0.24);
+  background: rgba(11, 20, 36, 0.92);
+}
+
+.encounter-card h3 {
+  margin-bottom: 6px;
+}
+
+.encounter-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.enc-badge {
+  font-size: 0.83rem;
+  border: 1px solid rgba(225, 182, 91, 0.35);
+  color: #ffe1a2;
+  background: rgba(225, 182, 91, 0.12);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.monster-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.monster-item {
+  border-radius: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(124, 199, 255, 0.2);
+  background: rgba(17, 35, 63, 0.4);
+}
+
+@media (max-width: 900px) {
+  .enc-gen-layout {
+    grid-template-columns: 1fr;
+  }
+}
