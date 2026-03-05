@@ -557,3 +557,49 @@ body.lightbox-open {
   color: var(--gold);
   text-decoration: underline;
 }
+
+.tools-page {
+  padding-bottom: 40px;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.tool-card {
+  background: linear-gradient(175deg, rgba(17, 26, 43, 0.9), rgba(11, 18, 32, 0.9));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 199, 255, 0.5);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.4);
+}
+
+.tool-card h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.tool-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.tool-card a {
+  margin-top: auto;
+  width: fit-content;
+  text-decoration: none;
+  font-weight: 650;
+}
