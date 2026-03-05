@@ -30,7 +30,7 @@ Use `reference/scripts` to manage dataset cloning and updates.
 Use the manifest-driven sync workflow to clone or update every configured reference repository:
 
 ```bash
-node reference/scripts/sync-references.js
+node ./reference/scripts/sync-references.js
 ```
 
 Repository definitions live in `reference/manifest.json`.
