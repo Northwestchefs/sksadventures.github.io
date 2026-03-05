@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "generator": "SKS Encounter Generator",
+    "foundryVersion": "v13 (Build 351+)",
+    "system": "dnd5e 5.2.x",
+    "exportedAt": "2026-01-01T00:00:00.000Z"
+  },
+  "encounter": {
+    "name": "Swamp Basilisk Ambush",
+    "difficulty": "hard",
+    "environment": "swamp",
+    "partyLevel": 5,
+    "partySize": 4,
+    "adjustedXp": 4200,
+    "rawXp": 2100
+  },
+  "monsters": [
+    {
+      "name": "Basilisk",
+      "count": 3,
+      "cr": 3,
+      "hp": 95,
+      "ac": 14,
+      "init": 2,
+      "xp": 700
+    }
+  ],
+  "journal": {
+    "treasure": [],
+    "narrativeHooks": [],
+    "bossBehavior": "Basilisk opens with battlefield control",
+    "bossPhases": [],
+    "lairActions": [],
+    "environmentHazards": []
+  }
+}
