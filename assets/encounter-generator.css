@@ -87,6 +87,12 @@
   gap: 12px;
 }
 
+.enc-export-controls {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
 .encounter-card {
   border-radius: 12px;
   padding: 14px;
