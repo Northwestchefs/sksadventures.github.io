@@ -9,76 +9,121 @@
       content="Free Dungeons &amp; Dragons tools for Dungeon Masters including encounter builders, monster search, spell browsers, and campaign utilities."
     />
     <link rel="canonical" href="https://example.github.io/tools/" />
-    <link rel="stylesheet" href="/assets/styles.css" />
-    <link rel="stylesheet" href="/css/tools.css" />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <style>
+      .guide-page {
+        width: min(1100px, 92vw);
+        margin: 0 auto;
+        padding: 20px 0 40px;
+      }
+
+      .guide-intro {
+        margin-bottom: 24px;
+      }
+
+      .guide-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+
+      .guide-card {
+        padding: 20px;
+        border: 1px solid rgba(124, 199, 255, 0.22);
+        background:
+          radial-gradient(circle at top right, rgba(124, 199, 255, 0.07), transparent 60%),
+          linear-gradient(175deg, rgba(17, 26, 43, 0.94), rgba(11, 18, 32, 0.95));
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .guide-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(225, 182, 91, 0.4);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+      }
+
+      .guide-card h2 {
+        font-size: 1.35rem;
+        margin-bottom: 10px;
+      }
+
+      .guide-card p {
+        margin-bottom: 14px;
+      }
+
+      .guide-link {
+        color: var(--gold);
+        font-weight: 650;
+        text-decoration: none;
+      }
+
+      .guide-link:hover {
+        color: var(--ice);
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header">
       <nav class="nav" aria-label="Primary">
-        <a class="brand" href="/">SKS Adventures</a>
+        <a class="brand" href="../index.html#hero">SKS Adventures</a>
         <div class="nav-links">
-          <a href="/#campaigns">Campaigns</a>
-          <a href="/#expect">What to Expect</a>
-          <a href="/gallery.html">Gallery</a>
-          <a href="/dnd-guide/">D&amp;D Guide</a>
-          <a href="/tools/">Tools</a>
-          <a href="/#apply">Apply</a>
-          <a href="/#footer-contact">Contact</a>
+          <a href="../index.html#campaigns">Campaigns</a>
+          <a href="../index.html#expect">What to Expect</a>
+          <a href="../gallery.html">Gallery</a>
+          <a href="../dnd-guide/">D&amp;D Guide</a>
+          <a href="../tools/">Tools</a>
+          <a href="../index.html#apply">Apply</a>
+          <a href="../index.html#footer-contact">Contact</a>
         </div>
       </nav>
     </header>
 
-    <main id="main-content" class="section tools-page">
-      <section class="tools-hero" aria-label="Dungeon Master's Toolkit introduction">
+    <main id="main-content" class="guide-page">
+      <nav class="site-nav" aria-label="Page navigation">
+        <a class="home-button" href="https://northwestchefs.github.io/sksadventures.github.io/index.html#hero">← Home</a>
+      </nav>
+
+      <section class="guide-intro" aria-label="Dungeon Master's Toolkit introduction">
         <h1>Dungeon Master's Toolkit</h1>
         <p>
-          Powerful tools to help you run adventures, build encounters, and explore the worlds of Dungeons &amp; Dragons.
+          Powerful tools to help you run adventures, build encounters, and explore the worlds of Dungeons
+          &amp; Dragons.
         </p>
       </section>
 
-      <section class="tool-grid" aria-label="Dungeons and Dragons tools">
-        <article class="tool-card">
+      <section class="guide-grid" aria-label="Dungeons and Dragons tools">
+        <article class="card guide-card">
           <h2>Monster Search</h2>
           <p>Search monsters and view full statblocks.</p>
-          <a class="tool-button" href="/tools/monster-search/">Open Tool</a>
+          <a class="guide-link" href="/tools/monster-search/">Open Tool</a>
         </article>
 
-        <article class="tool-card">
+        <article class="card guide-card">
           <h2>Encounter Builder</h2>
           <p>Balance encounters instantly.</p>
-          <a class="tool-button" href="/tools/encounter-builder/">Open Tool</a>
+          <a class="guide-link" href="/tools/encounter-builder/">Open Tool</a>
         </article>
 
-        <article class="tool-card">
+        <article class="card guide-card">
           <h2>Spell Browser</h2>
           <p>Browse and filter spells.</p>
-          <a class="tool-button" href="/tools/spell-browser/">Open Tool</a>
+          <a class="guide-link" href="/tools/spell-browser/">Open Tool</a>
         </article>
 
-        <article class="tool-card">
+        <article class="card guide-card">
           <h2>Random Loot Generator</h2>
           <p>Generate treasure for your party.</p>
-          <a class="tool-button" href="/tools/loot-generator/">Open Tool</a>
+          <a class="guide-link" href="/tools/loot-generator/">Open Tool</a>
         </article>
 
-        <article class="tool-card">
+        <article class="card guide-card">
           <h2>Dice Probability Calculator</h2>
           <p>Analyze dice outcomes.</p>
-          <a class="tool-button" href="/tools/dice-calculator/">Open Tool</a>
+          <a class="guide-link" href="/tools/dice-calculator/">Open Tool</a>
         </article>
       </section>
     </main>
-
-    <footer class="site-footer" id="footer-contact">
-      <p>© SKS Adventures</p>
-      <div class="footer-links">
-        <a href="/#apply">Apply</a>
-        <a href="/gallery.html">Gallery</a>
-        <a href="/tools/">Tools</a>
-        <a href="/dnd-guide/">D&amp;D Guide</a>
-        <a href="/legal/privacy-policy.html">Privacy Policy</a>
-      </div>
-    </footer>
   </body>
 </html>
