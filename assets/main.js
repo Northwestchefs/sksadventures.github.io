@@ -86,6 +86,19 @@ function configureLinks() {
   }
 }
 
+
+
+function removeLegacyFeaturedArt() {
+  const legacyShowcase = document.querySelector(".hero-showcase");
+  if (!legacyShowcase) return;
+
+  const legacyLayout = legacyShowcase.closest(".hero-layout");
+  legacyShowcase.remove();
+  if (legacyLayout) {
+    legacyLayout.classList.remove("hero-layout");
+  }
+}
+
 function wireCopyHandle() {
   const copyBtn = document.getElementById("copy-discord");
   if (!copyBtn) return;
@@ -103,3 +116,4 @@ function wireCopyHandle() {
 wireSmoothScroll();
 configureLinks();
 wireCopyHandle();
+removeLegacyFeaturedArt();
