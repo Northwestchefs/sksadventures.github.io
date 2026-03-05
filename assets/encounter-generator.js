@@ -49,6 +49,8 @@
   const statusEl = document.getElementById('generator-status');
   const summaryEl = document.getElementById('encounter-summary');
   const resultsEl = document.getElementById('encounter-results');
+  const exportBtnEl = document.getElementById('export-foundry-btn');
+  const exportStatusEl = document.getElementById('export-status');
 
   const treasureEl = document.getElementById('treasure-hooks');
   const narrativeEl = document.getElementById('narrative-hooks');
@@ -117,6 +119,24 @@
   const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
 
   let monsterPool = [];
+  let lastGenerated = null;
+
+  const CR_BASELINE = {
+    0: { hp: 8, ac: 10, init: 1 },
+    0.125: { hp: 16, ac: 11, init: 1 },
+    0.25: { hp: 24, ac: 12, init: 1 },
+    0.5: { hp: 36, ac: 12, init: 1 },
+    1: { hp: 52, ac: 13, init: 2 },
+    2: { hp: 78, ac: 13, init: 2 },
+    3: { hp: 95, ac: 14, init: 2 },
+    4: { hp: 110, ac: 14, init: 2 },
+    5: { hp: 131, ac: 15, init: 2 },
+    6: { hp: 146, ac: 15, init: 2 },
+    7: { hp: 161, ac: 15, init: 2 },
+    8: { hp: 176, ac: 16, init: 2 },
+    9: { hp: 190, ac: 16, init: 3 },
+    10: { hp: 205, ac: 17, init: 3 }
+  };
 
   const xpMultiplier = (count) => {
     if (count === 1) return 1;
@@ -268,21 +288,9 @@
   }
 
 
-  function renderExpansionHooks(encounters, context) {
-    if (!treasureEl || !narrativeEl || !bossEl || !environmentHooksEl) {
-      return;
-    }
-
+  function buildExpansionHooks(encounters, context) {
     if (!encounters.length) {
-      treasureEl.textContent = 'No encounters available yet. Generate seeds to produce treasure prompts.';
-      narrativeEl.textContent = 'No encounters available yet. Generate seeds to produce narrative prompts.';
-      bossEl.textContent = 'No encounters available yet. Generate seeds to draft a boss template.';
-      environmentHooksEl.textContent = 'No encounters available yet. Generate seeds to produce environment twists.';
-      treasureEl.classList.add('muted');
-      narrativeEl.classList.add('muted');
-      bossEl.classList.add('muted');
-      environmentHooksEl.classList.add('muted');
-      return;
+      return null;
     }
 
     const strongestEncounter = [...encounters].sort((a, b) => b.adjustedXp - a.adjustedXp)[0];
@@ -300,33 +308,246 @@
 
     const pack = ENVIRONMENT_PACKS[context.environment] || ENVIRONMENT_PACKS.any;
 
+    return {
+      treasureIdeas,
+      narrativeIdeas: [randomItem(narrativePool), randomItem(narrativePool), randomItem(narrativePool)],
+      bossChassis: bossCandidate ? bossCandidate.name : 'Elite lieutenant',
+      bossBehavior: randomItem(BOSS_BEHAVIORS),
+      bossPhaseTwo: randomItem(BOSS_PHASE_EVENTS),
+      bossPhaseThree: randomItem(BOSS_PHASE_EVENTS),
+      lairActions: [randomItem(LAIR_ACTIONS), randomItem(LAIR_ACTIONS)],
+      hazard: randomItem(pack.hazards),
+      objective: randomItem(pack.objectives),
+      twist: randomItem(pack.twists)
+    };
+  }
+
+
+  function renderExpansionHooks(encounters, hooks) {
+    if (!treasureEl || !narrativeEl || !bossEl || !environmentHooksEl) {
+      return;
+    }
+
+    if (!encounters.length) {
+      treasureEl.textContent = 'No encounters available yet. Generate seeds to produce treasure prompts.';
+      narrativeEl.textContent = 'No encounters available yet. Generate seeds to produce narrative prompts.';
+      bossEl.textContent = 'No encounters available yet. Generate seeds to draft a boss template.';
+      environmentHooksEl.textContent = 'No encounters available yet. Generate seeds to produce environment twists.';
+      treasureEl.classList.add('muted');
+      narrativeEl.classList.add('muted');
+      bossEl.classList.add('muted');
+      environmentHooksEl.classList.add('muted');
+      return;
+    }
+
     treasureEl.classList.remove('muted');
     narrativeEl.classList.remove('muted');
     bossEl.classList.remove('muted');
     environmentHooksEl.classList.remove('muted');
 
-    treasureEl.innerHTML = `<ul>${treasureIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`;
-    narrativeEl.innerHTML = `<ul>${[randomItem(narrativePool), randomItem(narrativePool), randomItem(narrativePool)]
-      .map((idea) => `<li>${idea}</li>`)
-      .join('')}</ul>`;
+    treasureEl.innerHTML = `<ul>${hooks.treasureIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`;
+    narrativeEl.innerHTML = `<ul>${hooks.narrativeIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`;
 
     bossEl.innerHTML = `
-      <p><strong>Boss Chassis:</strong> ${bossCandidate ? bossCandidate.name : 'Elite lieutenant'} (${randomItem(BOSS_BEHAVIORS)}).</p>
+      <p><strong>Boss Chassis:</strong> ${hooks.bossChassis} (${hooks.bossBehavior}).</p>
       <ol>
         <li><strong>Phase 1:</strong> Establish pressure and test player positioning.</li>
-        <li><strong>Phase 2:</strong> At 60% HP, boss ${randomItem(BOSS_PHASE_EVENTS)}.</li>
-        <li><strong>Phase 3:</strong> At 25% HP, boss ${randomItem(BOSS_PHASE_EVENTS)} and risks everything.</li>
+        <li><strong>Phase 2:</strong> At 60% HP, boss ${hooks.bossPhaseTwo}.</li>
+        <li><strong>Phase 3:</strong> At 25% HP, boss ${hooks.bossPhaseThree} and risks everything.</li>
       </ol>
-      <p><strong>Lair Actions:</strong> ${randomItem(LAIR_ACTIONS)}; ${randomItem(LAIR_ACTIONS)}.</p>
+      <p><strong>Lair Actions:</strong> ${hooks.lairActions[0]}; ${hooks.lairActions[1]}.</p>
     `;
 
     environmentHooksEl.innerHTML = `
       <ul>
-        <li><strong>Hazard:</strong> ${randomItem(pack.hazards)}</li>
-        <li><strong>Objective:</strong> ${randomItem(pack.objectives)}</li>
-        <li><strong>Twist:</strong> ${randomItem(pack.twists)}</li>
+        <li><strong>Hazard:</strong> ${hooks.hazard}</li>
+        <li><strong>Objective:</strong> ${hooks.objective}</li>
+        <li><strong>Twist:</strong> ${hooks.twist}</li>
       </ul>
     `;
+  }
+
+  function estimateMonsterStats(cr) {
+    const roundedCr = Math.max(0, Number(cr) || 0);
+    const baseline = CR_BASELINE[roundedCr] || CR_BASELINE[Math.floor(roundedCr)] || CR_BASELINE[10];
+    return {
+      hp: baseline.hp,
+      ac: baseline.ac,
+      init: baseline.init
+    };
+  }
+
+  function buildFoundryPayload() {
+    if (!lastGenerated || !lastGenerated.encounters.length) {
+      return null;
+    }
+
+    const encounter = lastGenerated.encounters[0];
+    const monsters = encounter.roster.flatMap((monster) => Array.from({ length: monster.quantity }, (_, idx) => {
+      const estimated = estimateMonsterStats(monster.cr);
+      return {
+        name: monster.quantity > 1 ? `${monster.name} ${idx + 1}` : monster.name,
+        baseName: monster.name,
+        cr: monster.cr,
+        xp: monster.xp,
+        estimated
+      };
+    }));
+
+    return {
+      exportMeta: {
+        source: 'SKS Adventures Encounter Generator',
+        foundryTarget: 'V13 Build 351',
+        systemTarget: 'dnd5e 5.2.4',
+        createdAt: new Date().toISOString()
+      },
+      context: lastGenerated.context,
+      thresholds: lastGenerated.thresholds,
+      encounter: {
+        name: `SKS ${lastGenerated.context.environment.toUpperCase()} ${lastGenerated.context.difficulty.toUpperCase()} Encounter`,
+        adjustedXp: encounter.adjustedXp,
+        rawXp: encounter.rawXp,
+        creatureCount: encounter.creatureCount,
+        monsters
+      },
+      hooks: lastGenerated.hooks
+    };
+  }
+
+  function buildFoundryMacro(payload) {
+    const payloadText = JSON.stringify(payload, null, 2);
+    return `const payload = ${payloadText};
+
+const ensureFolder = async (name, type) => {
+  const existing = game.folders.find((f) => f.type === type && f.name === name);
+  return existing ?? Folder.create({ name, type, color: '#7cc7ff' });
+};
+
+const actorFolder = await ensureFolder('SKS Encounters', 'Actor');
+const journalFolder = await ensureFolder('SKS Encounters', 'JournalEntry');
+
+const actors = [];
+for (const monster of payload.encounter.monsters) {
+  const actor = await Actor.create({
+    name: monster.name,
+    type: 'npc',
+    img: 'icons/svg/mystery-man.svg',
+    folder: actorFolder.id,
+    system: {
+      details: { cr: monster.cr },
+      attributes: {
+        ac: { value: monster.estimated.ac },
+        hp: { value: monster.estimated.hp, max: monster.estimated.hp },
+        init: { bonus: monster.estimated.init }
+      }
+    },
+    prototypeToken: {
+      name: monster.name,
+      disposition: -1,
+      actorLink: false,
+      randomImg: false
+    }
+  });
+  actors.push({ actor, initBonus: monster.estimated.init });
+}
+
+let scene = canvas?.scene ?? game.scenes.current;
+if (!scene) {
+  scene = await Scene.create({
+    name: payload.encounter.name,
+    width: 3000,
+    height: 2000,
+    grid: { type: 1, size: 100 }
+  });
+}
+
+const tokenDocs = actors.map(({ actor }, index) => ({
+  name: actor.name,
+  actorId: actor.id,
+  x: 400 + (index % 6) * 160,
+  y: 400 + Math.floor(index / 6) * 160,
+  disposition: -1
+}));
+
+const createdTokens = await scene.createEmbeddedDocuments('Token', tokenDocs);
+let combat = game.combats.viewed;
+if (!combat || combat.scene?.id !== scene.id) {
+  combat = await Combat.create({ scene: scene.id, active: true });
+}
+
+const combatants = await combat.createEmbeddedDocuments('Combatant', createdTokens.map((token) => ({
+  tokenId: token.id,
+  actorId: token.actorId
+})));
+
+await Promise.all(combatants.map((combatant, index) => {
+  const initBonus = actors[index]?.initBonus ?? 0;
+  const initiative = Math.floor(Math.random() * 20) + 1 + initBonus;
+  return combatant.update({ initiative });
+}));
+
+const hookList = payload.hooks;
+const journalContent = \
+  '<h2>' + payload.encounter.name + '</h2>' +
+  '<p><strong>Target Difficulty:</strong> ' + payload.context.difficulty.toUpperCase() + '</p>' +
+  '<p><strong>Environment:</strong> ' + payload.context.environment + '</p>' +
+  '<p><strong>Adjusted XP:</strong> ' + payload.encounter.adjustedXp.toLocaleString() + '</p>' +
+  '<h3>Treasure Ideas</h3><ul>' + hookList.treasureIdeas.map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
+  '<h3>Narrative Hooks</h3><ul>' + hookList.narrativeIdeas.map((i) => '<li>' + i + '</li>').join('') + '</ul>' +
+  '<h3>Boss Phases</h3>' +
+  '<p><strong>Boss:</strong> ' + hookList.bossChassis + ' (' + hookList.bossBehavior + ')</p>' +
+  '<ol>' +
+  '<li><strong>Phase 1:</strong> Establish pressure and test player positioning.</li>' +
+  '<li><strong>Phase 2:</strong> At 60% HP, boss ' + hookList.bossPhaseTwo + '.</li>' +
+  '<li><strong>Phase 3:</strong> At 25% HP, boss ' + hookList.bossPhaseThree + ' and risks everything.</li>' +
+  '</ol>' +
+  '<p><strong>Lair Actions:</strong> ' + hookList.lairActions.join('; ') + '</p>' +
+  '<h3>Environment Pack</h3>' +
+  '<ul><li><strong>Hazard:</strong> ' + hookList.hazard + '</li><li><strong>Objective:</strong> ' + hookList.objective + '</li><li><strong>Twist:</strong> ' + hookList.twist + '</li></ul>';
+
+await JournalEntry.create({
+  name: payload.encounter.name + ' - Encounter Brief',
+  folder: journalFolder.id,
+  pages: [{
+    name: 'Encounter Brief',
+    type: 'text',
+    text: { content: journalContent, format: 1 }
+  }]
+});
+
+ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, and journal are ready.');
+`;
+  }
+
+  function downloadFile(name, content, type = 'text/plain') {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = name;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportFoundryEncounter() {
+    const payload = buildFoundryPayload();
+    if (!payload) {
+      if (exportStatusEl) {
+        exportStatusEl.textContent = 'Generate encounters before exporting.';
+      }
+      return;
+    }
+
+    const slug = `${payload.context.environment}-${payload.context.difficulty}-${Date.now()}`;
+    const macro = buildFoundryMacro(payload);
+    downloadFile(`sks-foundry-import-${slug}.js`, macro, 'text/javascript');
+    downloadFile(`sks-foundry-payload-${slug}.json`, JSON.stringify(payload, null, 2), 'application/json');
+
+    if (exportStatusEl) {
+      exportStatusEl.textContent = 'Downloaded Foundry macro + payload. Run the macro in Foundry V13 to create actors, tokens, initiative, and journal.';
+    }
   }
 
   function generateEncounters(event) {
@@ -355,12 +576,32 @@
       .slice(0, 3);
 
     const context = { level, size, difficulty, environment };
+    const hooks = buildExpansionHooks(options, context);
+
+    lastGenerated = {
+      context,
+      thresholds,
+      targetXp,
+      encounters: options,
+      hooks
+    };
+
     renderEncounters(options, thresholds, targetXp, context);
-    renderExpansionHooks(options, context);
+    renderExpansionHooks(options, hooks);
+
+    if (exportBtnEl) {
+      exportBtnEl.disabled = options.length === 0;
+    }
+    if (exportStatusEl) {
+      exportStatusEl.textContent = options.length ? 'Ready to export best encounter for Foundry V13.' : 'No encounter available to export.';
+    }
   }
 
   (async function init() {
     monsterPool = await loadMonsterPool();
     form.addEventListener('submit', generateEncounters);
+    if (exportBtnEl) {
+      exportBtnEl.addEventListener('click', exportFoundryEncounter);
+    }
   })();
 })();
