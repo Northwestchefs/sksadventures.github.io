@@ -86,6 +86,36 @@ function configureLinks() {
   }
 }
 
+
+
+function removeLegacyFeaturedArt() {
+  const legacyShowcase = document.querySelector(".hero-showcase");
+  if (!legacyShowcase) return;
+
+  const legacyLayout = legacyShowcase.closest(".hero-layout");
+  legacyShowcase.remove();
+  if (legacyLayout) {
+    legacyLayout.classList.remove("hero-layout");
+  }
+}
+
+function removeLegacyArtPlaceholders() {
+  const blockerText = ["Artwork preview", "add file to assets/images", "Featured Art", "Hand-picked pieces from your gallery"];
+  const hero = document.getElementById("hero");
+  if (!hero) return;
+
+  hero.querySelectorAll("*").forEach((node) => {
+    const text = node.textContent?.trim();
+    if (!text) return;
+    if (!blockerText.some((value) => text.includes(value))) return;
+
+    const removable = node.closest("aside, figure, .card, .panel, .hero-showcase, .hero-art-card, .hero-art-grid");
+    if (removable && removable !== hero) {
+      removable.remove();
+    }
+  });
+}
+
 function wireCopyHandle() {
   const copyBtn = document.getElementById("copy-discord");
   if (!copyBtn) return;
@@ -103,3 +133,5 @@ function wireCopyHandle() {
 wireSmoothScroll();
 configureLinks();
 wireCopyHandle();
+removeLegacyFeaturedArt();
+removeLegacyArtPlaceholders();
