@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Encounter Generator | SKS Adventures</title>
+    <meta
+      name="description"
+      content="Generate immersive D&D 5e encounters with party-aware XP budgets, smart monster mixes, and expandable DM-facing design tools."
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <link rel="stylesheet" href="../assets/encounter-generator.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <main id="main-content" class="enc-gen-page">
+      <a class="btn btn-secondary" href="index.html">← Back to Tools</a>
+
+      <section class="enc-gen-hero card" aria-labelledby="enc-gen-title">
+        <p class="enc-gen-kicker">Dungeon Master's Forge</p>
+        <h1 id="enc-gen-title">Encounter Generator</h1>
+        <p>
+          Build quick, balanced encounter seeds with flexible monster logic, difficulty-aware XP targets,
+          and room to expand into narrative hooks, treasure, and boss phases.
+        </p>
+      </section>
+
+      <section class="enc-gen-layout">
+        <form id="encounter-form" class="card enc-gen-controls" aria-label="Encounter controls">
+          <h2>Party Setup</h2>
+          <div class="enc-field-grid">
+            <label>
+              Party Level
+              <input id="party-level" type="number" min="1" max="20" value="5" required />
+            </label>
+            <label>
+              Party Size
+              <input id="party-size" type="number" min="1" max="10" value="4" required />
+            </label>
+            <label>
+              Difficulty
+              <select id="difficulty" required>
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+                <option value="deadly">Deadly</option>
+              </select>
+            </label>
+            <label>
+              Environment Theme
+              <select id="environment">
+                <option value="any" selected>Any</option>
+                <option value="dungeon">Dungeon</option>
+                <option value="forest">Forest</option>
+                <option value="underdark">Underdark</option>
+                <option value="urban">Urban</option>
+                <option value="swamp">Swamp</option>
+                <option value="arctic">Arctic</option>
+              </select>
+            </label>
+          </div>
+          <button class="btn" type="submit">Generate Encounters</button>
+          <p id="generator-status" class="enc-status" role="status" aria-live="polite"></p>
+        </form>
+
+        <section class="card enc-gen-output" aria-live="polite">
+          <h2>Encounter Results</h2>
+          <div id="encounter-summary" class="enc-summary placeholder">
+            Encounter recommendations will appear here.
+          </div>
+          <div id="encounter-results" class="enc-results" aria-label="Generated encounters"></div>
+        </section>
+      </section>
+
+      <section class="card enc-gen-placeholder" aria-label="Roadmap placeholder">
+        <h2>Expansion Hooks (Placeholder)</h2>
+        <ul>
+          <li>Treasure generation slots</li>
+          <li>Narrative hook prompts</li>
+          <li>Boss phase and lair-action templates</li>
+          <li>Environment-specific encounter packs</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="../assets/encounter-generator.js" defer></script>
+  </body>
+</html>
