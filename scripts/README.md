@@ -8,7 +8,7 @@ This repository includes a browser-friendly data compilation script at:
 
 The script reads raw JSON datasets from:
 
-- `reference/api-database/5e-database`
+- `reference/api-database/5e-database` (including `reference/api-database/5e-database/src`)
 
 It recursively discovers JSON files, identifies files relevant to each supported category, then normalizes records into a compact structure.
 
@@ -65,3 +65,9 @@ To add support for new datasets:
    - `unwrapRecords` for collection extraction
    - `normalizeRecord` and `compactDescription` for field mapping
 4. Re-run the script and confirm the generated `/data/*.json` files.
+
+Before building, sync reference repositories:
+
+```bash
+node reference/scripts/sync-references.js
+```
