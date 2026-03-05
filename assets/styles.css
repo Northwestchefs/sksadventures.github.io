@@ -539,3 +539,21 @@ body.lightbox-open {
     max-height: 70vh;
   }
 }
+
+
+.site-nav {
+  margin-bottom: 20px;
+}
+
+.home-button {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.home-button:hover,
+.home-button:focus-visible {
+  color: var(--gold);
+  text-decoration: underline;
+}
