@@ -50,6 +50,72 @@
   const summaryEl = document.getElementById('encounter-summary');
   const resultsEl = document.getElementById('encounter-results');
 
+  const treasureEl = document.getElementById('treasure-hooks');
+  const narrativeEl = document.getElementById('narrative-hooks');
+  const bossEl = document.getElementById('boss-hooks');
+  const environmentHooksEl = document.getElementById('environment-hooks');
+
+  const TREASURE_TABLE = {
+    easy: ['1d4 minor healing potions', 'A pouch with 3d10 gp and a silvered dagger', 'A spell scroll (1st level) in a weatherproof case'],
+    medium: ['2d4 gemstones worth 25 gp each', 'One uncommon consumable and 4d10 gp', 'A map fragment leading to a side vault'],
+    hard: ['A +1 ammunition bundle (6 pieces) and 6d10 gp', 'A rare crafting component tied to the region', 'A key that opens a locked faction cache'],
+    deadly: ['A rare magic item with a complication attached', 'A relic tied to the campaign villain and 8d10 gp', 'A boon token redeemable with a powerful patron']
+  };
+
+  const NARRATIVE_PROMPTS = {
+    any: ['A survivor begs the party to recover a ledger before rival scavengers arrive.', 'The monsters were hired to delay the heroes while a ritual advances elsewhere.', 'One enemy carries proof that a trusted ally is leaking party movements.'],
+    dungeon: ['Ancient mural clues reveal the true final chamber if deciphered during combat.', 'A chained spirit offers tactical aid in exchange for burial rites.', 'Noise from the fight wakes something deeper unless the party ends quickly.'],
+    forest: ['A druid circle marked these creatures as guardians, not villains.', "Fey emissaries watch from the treeline and judge the party's choices.", 'The encounter site sits atop a blighted root network spreading overnight.'],
+    underdark: ['Bioluminescent spores reveal invisible tracks to a hidden colony.', 'A drow house symbol brands one foe as politically significant.', 'A collapsed tunnel reveals an ancient route to the campaign objective.'],
+    urban: ['City watch plans to frame the party unless witnesses are protected.', "A thieves' guild fixer offers intel in exchange for a captured target.", 'The battle disrupts a festival, creating social fallout and opportunity.'],
+    swamp: ['The fetid water carries alchemical runoff from a secret laboratory.', 'Local villagers believe this marsh is cursed by a forgotten oath.', 'A submerged shrine briefly rises during the moon tide after combat.'],
+    arctic: ['Aurora patterns during battle point toward a giant-held observatory.', 'Supplies are sabotaged, forcing a survival bargain with defeated foes.', 'An ancestral spirit appears only if a fallen enemy receives honors.']
+  };
+
+  const ENVIRONMENT_PACKS = {
+    any: {
+      hazards: ['Shifting line-of-sight (fog, smoke, darkness pulses)', 'Unstable cover that can collapse after heavy hits'],
+      objectives: ['Rescue a captive before round 4', 'Disrupt an active ritual focus'],
+      twists: ['A neutral faction arrives mid-fight and demands terms', 'The objective relocates when triggered']
+    },
+    dungeon: {
+      hazards: ['Pressure-plate corridors trigger darts or swinging blades', 'Rune circles flare every other round'],
+      objectives: ['Seal a summoning gate', 'Hold a chokepoint for 3 rounds'],
+      twists: ['A portcullis splits the party', 'Torchlight awakens stone sentinels']
+    },
+    forest: {
+      hazards: ['Dense roots create difficult terrain', 'Canopy snipers gain intermittent half cover'],
+      objectives: ['Protect a sacred tree from fire damage', 'Track the alpha through moving brush'],
+      twists: ['Wild beasts panic through the battlefield', 'A rain burst extinguishes nonmagical flames']
+    },
+    underdark: {
+      hazards: ['Spore clouds impose brief vision penalties', 'Narrow ledges risk falling into chasms'],
+      objectives: ['Secure a fungus bridge crossing', 'Capture a scout alive for route intel'],
+      twists: ['Cave tremors reorder terrain', 'A myconid circle offers truce if not harmed']
+    },
+    urban: {
+      hazards: ['Crowded alleys restrict large creatures', 'Rooftop movement risks dangerous drops'],
+      objectives: ['Evacuate civilians from a market lane', 'Protect evidence from being burned'],
+      twists: ['Bell towers summon reinforcements on round 3', 'A rival crew exploits the chaos to steal valuables']
+    },
+    swamp: {
+      hazards: ['Deep mud reduces movement unless paths are found', 'Toxic insects swarm any creature that dashes'],
+      objectives: ['Destroy a fetid idol empowering foes', 'Escort an herbalist to rare reagents'],
+      twists: ['Tidewater rises and redraws safe routes', "Will-o'wisps attempt to lure stragglers away"]
+    },
+    arctic: {
+      hazards: ['Icy surfaces force balance checks on high-speed movement', 'Whiteout gusts impose ranged attack penalties'],
+      objectives: ['Stabilize a cracking ice bridge', 'Light heat beacons before exhaustion sets in'],
+      twists: ['An avalanche starts a round timer', 'An ice mephit envoy offers hidden passage']
+    }
+  };
+
+  const BOSS_BEHAVIORS = ['focuses the weakest target', 'opens with battlefield control', 'retreats behind minions when bloodied', 'hunts spellcasters first'];
+  const BOSS_PHASE_EVENTS = ['summons reinforcements', 'changes damage type', 'activates terrain hazards', 'gains a reaction-based counter'];
+  const LAIR_ACTIONS = ['Initiative 20: force movement via terrain shift', 'Initiative 20: spawn obscuring effects', 'Initiative 20: pulse damage in a marked zone', 'Initiative 20: disable healing in one area until next round'];
+
+  const randomItem = (items) => items[Math.floor(Math.random() * items.length)];
+
   let monsterPool = [];
 
   const xpMultiplier = (count) => {
@@ -201,6 +267,68 @@
       .join('');
   }
 
+
+  function renderExpansionHooks(encounters, context) {
+    if (!treasureEl || !narrativeEl || !bossEl || !environmentHooksEl) {
+      return;
+    }
+
+    if (!encounters.length) {
+      treasureEl.textContent = 'No encounters available yet. Generate seeds to produce treasure prompts.';
+      narrativeEl.textContent = 'No encounters available yet. Generate seeds to produce narrative prompts.';
+      bossEl.textContent = 'No encounters available yet. Generate seeds to draft a boss template.';
+      environmentHooksEl.textContent = 'No encounters available yet. Generate seeds to produce environment twists.';
+      treasureEl.classList.add('muted');
+      narrativeEl.classList.add('muted');
+      bossEl.classList.add('muted');
+      environmentHooksEl.classList.add('muted');
+      return;
+    }
+
+    const strongestEncounter = [...encounters].sort((a, b) => b.adjustedXp - a.adjustedXp)[0];
+    const bossCandidate = [...strongestEncounter.roster].sort((a, b) => b.cr - a.cr)[0];
+    const treasureIdeas = [
+      randomItem(TREASURE_TABLE[context.difficulty] || TREASURE_TABLE.medium),
+      randomItem(TREASURE_TABLE.medium),
+      `${Math.max(1, strongestEncounter.creatureCount)} treasure parcels hidden across the battlefield`
+    ];
+
+    const narrativePool = [
+      ...(NARRATIVE_PROMPTS[context.environment] || []),
+      ...NARRATIVE_PROMPTS.any
+    ];
+
+    const pack = ENVIRONMENT_PACKS[context.environment] || ENVIRONMENT_PACKS.any;
+
+    treasureEl.classList.remove('muted');
+    narrativeEl.classList.remove('muted');
+    bossEl.classList.remove('muted');
+    environmentHooksEl.classList.remove('muted');
+
+    treasureEl.innerHTML = `<ul>${treasureIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`;
+    narrativeEl.innerHTML = `<ul>${[randomItem(narrativePool), randomItem(narrativePool), randomItem(narrativePool)]
+      .map((idea) => `<li>${idea}</li>`)
+      .join('')}</ul>`;
+
+    bossEl.innerHTML = `
+      <p><strong>Boss Chassis:</strong> ${bossCandidate ? bossCandidate.name : 'Elite lieutenant'} (${randomItem(BOSS_BEHAVIORS)}).</p>
+      <ol>
+        <li><strong>Phase 1:</strong> Establish pressure and test player positioning.</li>
+        <li><strong>Phase 2:</strong> At 60% HP, boss ${randomItem(BOSS_PHASE_EVENTS)}.</li>
+        <li><strong>Phase 3:</strong> At 25% HP, boss ${randomItem(BOSS_PHASE_EVENTS)} and risks everything.</li>
+      </ol>
+      <p><strong>Lair Actions:</strong> ${randomItem(LAIR_ACTIONS)}; ${randomItem(LAIR_ACTIONS)}.</p>
+    `;
+
+    environmentHooksEl.innerHTML = `
+      <ul>
+        <li><strong>Hazard:</strong> ${randomItem(pack.hazards)}</li>
+        <li><strong>Objective:</strong> ${randomItem(pack.objectives)}</li>
+        <li><strong>Twist:</strong> ${randomItem(pack.twists)}</li>
+      </ul>
+    `;
+  }
+
   function generateEncounters(event) {
     event.preventDefault();
 
@@ -226,7 +354,9 @@
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 3);
 
-    renderEncounters(options, thresholds, targetXp, { level, size, difficulty });
+    const context = { level, size, difficulty, environment };
+    renderEncounters(options, thresholds, targetXp, context);
+    renderExpansionHooks(options, context);
   }
 
   (async function init() {
