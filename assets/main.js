@@ -86,6 +86,7 @@ function configureLinks() {
   }
 }
 
+
 function wireCopyHandle() {
   const copyBtn = document.getElementById("copy-discord");
   if (!copyBtn) return;
