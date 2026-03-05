@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>D&amp;D Guide | Learn to Play Dungeons &amp; Dragons</title>
+    <meta
+      name="description"
+      content="Learn how to play Dungeons &amp; Dragons, run campaigns, improve your roleplaying, and master Foundry VTT with the SKS Adventures D&amp;D Guide."
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <style>
+      .guide-page {
+        width: min(1100px, 92vw);
+        margin: 0 auto;
+        padding: 20px 0 40px;
+      }
+
+      .guide-intro {
+        margin-bottom: 24px;
+      }
+
+      .guide-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+
+      .guide-card {
+        padding: 20px;
+        border: 1px solid rgba(124, 199, 255, 0.22);
+        background:
+          radial-gradient(circle at top right, rgba(124, 199, 255, 0.07), transparent 60%),
+          linear-gradient(175deg, rgba(17, 26, 43, 0.94), rgba(11, 18, 32, 0.95));
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .guide-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(225, 182, 91, 0.4);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+      }
+
+      .guide-card h2 {
+        font-size: 1.35rem;
+        margin-bottom: 10px;
+      }
+
+      .guide-card p {
+        margin-bottom: 14px;
+      }
+
+      .guide-link {
+        color: var(--gold);
+        font-weight: 650;
+        text-decoration: none;
+      }
+
+      .guide-link:hover {
+        color: var(--ice);
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary">
+        <a class="brand" href="../index.html#hero">SKS Adventures</a>
+        <div class="nav-links">
+          <a href="../index.html#campaigns">Campaigns</a>
+          <a href="../index.html#expect">What to Expect</a>
+          <a href="../gallery.html">Gallery</a>
+          <a href="../index.html#apply">Apply</a>
+          <a href="../index.html#footer-contact">Contact</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main-content" class="guide-page">
+      <section class="guide-intro">
+        <h1>Dungeons &amp; Dragons Guide</h1>
+        <p>
+          Welcome to the SKS Adventures D&amp;D Guide. This section helps both new and experienced players
+          learn the game, improve their roleplaying, and run immersive campaigns.
+        </p>
+      </section>
+
+      <section class="guide-grid" aria-label="Dungeons and Dragons guide topics">
+        <article class="card guide-card">
+          <h2>Learn D&amp;D</h2>
+          <p>Beginner-friendly guides explaining the core rules and how the game works.</p>
+          <a class="guide-link" href="learn-dnd/">Read More</a>
+        </article>
+
+        <article class="card guide-card">
+          <h2>Run D&amp;D</h2>
+          <p>Dungeon Master advice for running immersive campaigns.</p>
+          <a class="guide-link" href="run-dnd/">Read More</a>
+        </article>
+
+        <article class="card guide-card">
+          <h2>Player Tips &amp; Tricks</h2>
+          <p>Strategies to help players roleplay better and build memorable characters.</p>
+          <a class="guide-link" href="player-tips/">Read More</a>
+        </article>
+
+        <article class="card guide-card">
+          <h2>Playing D&amp;D with Foundry VTT</h2>
+          <p>Guides for playing D&amp;D online using Foundry Virtual Tabletop.</p>
+          <a class="guide-link" href="foundry-vtt/">Read More</a>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
