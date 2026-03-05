@@ -414,7 +414,7 @@
     };
   }
 
-  function buildFoundryMacro(payload) {
+  function buildFoundryImportMacroScript(payload) {
     const payloadText = JSON.stringify(payload, null, 2);
     return `const payload = ${payloadText};
 
@@ -519,6 +519,82 @@ ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, a
 `;
   }
 
+  function buildFoundryMacroDocument(payload) {
+    return {
+      name: `Import ${payload.encounter.name}`,
+      type: 'script',
+      scope: 'global',
+      img: 'icons/svg/dice-target.svg',
+      command: buildFoundryImportMacroScript(payload),
+      folder: null,
+      flags: {
+        dnd5e: {
+          effectMacro: false
+        }
+      },
+      ownership: {
+        default: 0
+      }
+    };
+  }
+
+  function buildFoundryJournalDocument(payload) {
+    const hookList = payload.hooks;
+    const journalContent = [
+      `<p><strong>Target Difficulty:</strong> ${payload.context.difficulty.toUpperCase()}</p>`,
+      `<p><strong>Environment:</strong> ${payload.context.environment}</p>`,
+      `<p><strong>Adjusted XP:</strong> ${payload.encounter.adjustedXp.toLocaleString()}</p>`,
+      `<h2>Treasure Ideas</h2><ul>${hookList.treasureIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`,
+      `<h2>Narrative Hooks</h2><ul>${hookList.narrativeIdeas.map((idea) => `<li>${idea}</li>`).join('')}</ul>`,
+      '<h2>Boss Phases</h2>',
+      `<p><strong>Boss:</strong> ${hookList.bossChassis} (${hookList.bossBehavior})</p>`,
+      '<ol>',
+      '<li><strong>Phase 1:</strong> Establish pressure and test player positioning.</li>',
+      `<li><strong>Phase 2:</strong> At 60% HP, boss ${hookList.bossPhaseTwo}.</li>`,
+      `<li><strong>Phase 3:</strong> At 25% HP, boss ${hookList.bossPhaseThree} and risks everything.</li>`,
+      '</ol>',
+      `<p><strong>Lair Actions:</strong> ${hookList.lairActions.join('; ')}</p>`,
+      '<h2>Environment Pack</h2>',
+      `<ul><li><strong>Hazard:</strong> ${hookList.hazard}</li><li><strong>Objective:</strong> ${hookList.objective}</li><li><strong>Twist:</strong> ${hookList.twist}</li></ul>`
+    ].join('');
+
+    return {
+      name: `${payload.encounter.name} - Encounter Brief`,
+      folder: null,
+      pages: [{
+        name: 'Encounter Brief',
+        type: 'text',
+        title: {
+          show: true,
+          level: 1
+        },
+        text: {
+          format: 1,
+          content: journalContent
+        },
+        sort: 0,
+        flags: {},
+        system: {},
+        ownership: {
+          default: -1
+        }
+      }],
+      categories: [],
+      flags: {
+        world: {
+          sksEncounterGenerator: {
+            environment: payload.context.environment,
+            difficulty: payload.context.difficulty,
+            adjustedXp: payload.encounter.adjustedXp
+          }
+        }
+      },
+      ownership: {
+        default: 0
+      }
+    };
+  }
+
   function downloadFile(name, content, type = 'text/plain') {
     const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
@@ -541,12 +617,17 @@ ui.notifications.info('SKS encounter imported: actors, tokens, combat tracker, a
     }
 
     const slug = `${payload.context.environment}-${payload.context.difficulty}-${Date.now()}`;
-    const macro = buildFoundryMacro(payload);
-    downloadFile(`sks-foundry-import-${slug}.js`, macro, 'text/javascript');
+    const macroScript = buildFoundryImportMacroScript(payload);
+    const macroDocument = buildFoundryMacroDocument(payload);
+    const journalDocument = buildFoundryJournalDocument(payload);
+
+    downloadFile(`sks-foundry-import-${slug}.js`, macroScript, 'text/javascript');
+    downloadFile(`sks-foundry-macro-${slug}.json`, JSON.stringify(macroDocument, null, 2), 'application/json');
+    downloadFile(`sks-foundry-journal-${slug}.json`, JSON.stringify(journalDocument, null, 2), 'application/json');
     downloadFile(`sks-foundry-payload-${slug}.json`, JSON.stringify(payload, null, 2), 'application/json');
 
     if (exportStatusEl) {
-      exportStatusEl.textContent = 'Downloaded Foundry macro + payload. Run the macro in Foundry V13 to create actors, tokens, initiative, and journal.';
+      exportStatusEl.textContent = 'Downloaded pretty Foundry exports (.js macro script + macro JSON + journal JSON + payload JSON).';
     }
   }
 
