@@ -2,7 +2,7 @@ const FORM_URL = "https://formsubmit.co/contact.sksadventures@gmail.com";
 const DISCORD_INVITE_URL = "https://discord.gg/ZgydMte5SW";
 const CONTACT_EMAIL = "contact.sksadventures@gmail.com";
 const SAFETY_URL = "apply.html"; 
-const DISCORD_HANDLE = "YourDiscordHere";
+const DISCORD_HANDLE = "desertxoracle";
 
 const isPlaceholderUrl = (url) => url === "https://example.com";
 
