@@ -141,6 +141,7 @@ h2 {
   box-shadow: var(--shadow);
 }
 
+.hero-layout,
 .hero-content,
 .apply-box,
 .logistics-grid,
@@ -148,17 +149,65 @@ h2 {
   padding: 20px;
 }
 
-.hero-watermark {
-  background-image:
-    linear-gradient(175deg, rgba(10, 16, 29, 0.85), rgba(8, 14, 25, 0.9)),
-    image-set(
-      url("images/monsters/beholder1.webp") type("image/webp"),
-      url("images/monsters/beholder1.png") type("image/png"),
-      url("images/monsters/beholder1.jpg") type("image/jpeg")
-    );
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+.hero-layout {
+  display: grid;
+  gap: 20px;
+}
+
+.hero-showcase {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(7, 14, 25, 0.72);
+  padding: 16px;
+}
+
+.hero-showcase p {
+  margin-top: -4px;
+}
+
+.hero-art-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hero-art-card {
+  margin: 0;
+  background: rgba(11, 18, 32, 0.8);
+  border: 1px solid rgba(124, 199, 255, 0.25);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.hero-art-card img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.hero-art-featured {
+  grid-column: span 2;
+}
+
+.hero-art-featured img {
+  aspect-ratio: 16 / 9;
+}
+
+.hero-art-card figcaption {
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+
+.hero-art-card.art-missing img {
+  background: linear-gradient(160deg, rgba(124, 199, 255, 0.18), rgba(11, 18, 32, 0.92));
+}
+
+.hero-art-card.art-missing figcaption::after {
+  content: " • add file to assets/images";
+  color: var(--ice);
 }
 
 .card-grid,
@@ -331,7 +380,22 @@ a:focus-visible {
 }
 
 
+@media (max-width: 560px) {
+  .hero-art-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-art-featured {
+    grid-column: span 1;
+  }
+}
+
 @media (min-width: 780px) {
+  .hero-layout {
+    grid-template-columns: 1.2fr 0.9fr;
+    align-items: start;
+  }
+
   .card-grid {
     grid-template-columns: repeat(3, 1fr);
   }

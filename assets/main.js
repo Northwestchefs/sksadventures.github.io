@@ -87,6 +87,35 @@ function configureLinks() {
 }
 
 
+function wireHomepageArt() {
+  const artImages = document.querySelectorAll(".js-home-art");
+  if (!artImages.length) return;
+
+  const extensions = [".jpg", ".jpeg", ".webp", ".png", ".avif", ".gif"];
+
+  artImages.forEach((img) => {
+    const basePath = img.dataset.base;
+    if (!basePath) return;
+
+    let extensionIndex = 0;
+
+    const tryNext = () => {
+      extensionIndex += 1;
+      if (extensionIndex >= extensions.length) {
+        img.removeEventListener("error", tryNext);
+        img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 900'%3E%3Crect width='1200' height='900' fill='%230b1220'/%3E%3Ctext x='600' y='460' text-anchor='middle' font-size='46' fill='%237cc7ff' font-family='Segoe UI, Arial'%3EArtwork preview%3C/text%3E%3C/svg%3E";
+        const card = img.closest('.hero-art-card');
+        if (card) card.classList.add('art-missing');
+        return;
+      }
+      img.src = `${basePath}${extensions[extensionIndex]}`;
+    };
+
+    img.addEventListener("error", tryNext);
+    img.src = `${basePath}${extensions[0]}`;
+  });
+}
+
 function wireCopyHandle() {
   const copyBtn = document.getElementById("copy-discord");
   if (!copyBtn) return;
@@ -104,3 +133,4 @@ function wireCopyHandle() {
 wireSmoothScroll();
 configureLinks();
 wireCopyHandle();
+wireHomepageArt();
