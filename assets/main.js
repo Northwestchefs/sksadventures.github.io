@@ -87,32 +87,32 @@ function configureLinks() {
 }
 
 
+function wireHomepageArt() {
+  const artImages = document.querySelectorAll(".js-home-art");
+  if (!artImages.length) return;
 
-function removeLegacyFeaturedArt() {
-  const legacyShowcase = document.querySelector(".hero-showcase");
-  if (!legacyShowcase) return;
+  const extensions = [".jpg", ".jpeg", ".webp", ".png", ".avif", ".gif"];
 
-  const legacyLayout = legacyShowcase.closest(".hero-layout");
-  legacyShowcase.remove();
-  if (legacyLayout) {
-    legacyLayout.classList.remove("hero-layout");
-  }
-}
+  artImages.forEach((img) => {
+    const basePath = img.dataset.base;
+    if (!basePath) return;
 
-function removeLegacyArtPlaceholders() {
-  const blockerText = ["Artwork preview", "add file to assets/images", "Featured Art", "Hand-picked pieces from your gallery"];
-  const hero = document.getElementById("hero");
-  if (!hero) return;
+    let extensionIndex = 0;
 
-  hero.querySelectorAll("*").forEach((node) => {
-    const text = node.textContent?.trim();
-    if (!text) return;
-    if (!blockerText.some((value) => text.includes(value))) return;
+    const tryNext = () => {
+      extensionIndex += 1;
+      if (extensionIndex >= extensions.length) {
+        img.removeEventListener("error", tryNext);
+        img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 900'%3E%3Crect width='1200' height='900' fill='%230b1220'/%3E%3Ctext x='600' y='460' text-anchor='middle' font-size='46' fill='%237cc7ff' font-family='Segoe UI, Arial'%3EArtwork preview%3C/text%3E%3C/svg%3E";
+        const card = img.closest('.hero-art-card');
+        if (card) card.classList.add('art-missing');
+        return;
+      }
+      img.src = `${basePath}${extensions[extensionIndex]}`;
+    };
 
-    const removable = node.closest("aside, figure, .card, .panel, .hero-showcase, .hero-art-card, .hero-art-grid");
-    if (removable && removable !== hero) {
-      removable.remove();
-    }
+    img.addEventListener("error", tryNext);
+    img.src = `${basePath}${extensions[0]}`;
   });
 }
 
@@ -133,5 +133,4 @@ function wireCopyHandle() {
 wireSmoothScroll();
 configureLinks();
 wireCopyHandle();
-removeLegacyFeaturedArt();
-removeLegacyArtPlaceholders();
+wireHomepageArt();
