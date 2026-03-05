@@ -60,18 +60,33 @@ function syncRepository(repo) {
 
   fs.mkdirSync(path.dirname(absoluteTarget), { recursive: true });
 
-  if (fs.existsSync(gitDir)) {
-    console.log(`[sync-references] Updating ${name} in ${repoPath}...`);
-    execSync('git pull --ff-only', {
-      cwd: absoluteTarget,
-      stdio: 'inherit',
-    });
-    return 'updated';
+  if (!fs.existsSync(absoluteTarget)) {
+    console.log(`[sync-references] Cloning ${name} into ${repoPath}...`);
+    runCommand(['git', 'clone', url, absoluteTarget], ROOT);
+    return 'cloned';
   }
 
-  console.log(`[sync-references] Cloning ${name} into ${repoPath}...`);
-  execSync(`git clone ${quoteShell(url)} ${quoteShell(absoluteTarget)}`, {
-    cwd: ROOT,
+  if (!fs.existsSync(gitDir)) {
+    const entries = fs.readdirSync(absoluteTarget);
+    if (entries.length === 0) {
+      console.log(`[sync-references] Empty directory found for ${name}; cloning into ${repoPath}...`);
+      fs.rmdirSync(absoluteTarget);
+      runCommand(['git', 'clone', url, absoluteTarget], ROOT);
+      return 'cloned';
+    }
+
+    throw new Error(`Target directory exists but is not a git repository: ${repoPath}`);
+  }
+
+  console.log(`[sync-references] Updating ${name} in ${repoPath}...`);
+  runCommand(['git', 'pull', '--ff-only'], absoluteTarget);
+  return 'updated';
+}
+
+function runCommand(parts, cwd) {
+  const command = parts.map(quoteArg).join(' ');
+  execSync(command, {
+    cwd,
     stdio: 'inherit',
   });
   return 'cloned';
@@ -79,6 +94,11 @@ function syncRepository(repo) {
 
 function quoteShell(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function quoteArg(value) {
+  const text = String(value);
+  return `"${text.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/g, '$1$1')}"`;
 }
 
 main();

@@ -69,5 +69,5 @@ To add support for new datasets:
 Before building, sync reference repositories:
 
 ```bash
-node reference/scripts/sync-references.js
+node ./reference/scripts/sync-references.js
 ```
