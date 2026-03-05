@@ -89,6 +89,11 @@ function runCommand(parts, cwd) {
     cwd,
     stdio: 'inherit',
   });
+  return 'cloned';
+}
+
+function quoteShell(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
 }
 
 function quoteArg(value) {
