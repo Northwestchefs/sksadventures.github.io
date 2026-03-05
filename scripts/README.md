@@ -6,7 +6,11 @@ This repository includes a browser-friendly data compilation script at:
 
 ## How the build script works
 
-The script reads raw JSON datasets from:
+The script reads reference paths from:
+
+- `reference/manifest.json`
+
+It currently compiles from the API database repository configured at:
 
 - `reference/api-database/5e-database`
 
@@ -32,13 +36,6 @@ Each output entry is flattened to:
 - `description`
 - `source`
 
-The script also:
-
-- accepts common input shapes (`[]`, `{ results: [] }`, and object containers)
-- flattens nested description fields into a plain text string
-- deduplicates by `index`
-- writes compact JSON arrays for faster browser loading
-
 ## How to run
 
 From repository root:
@@ -49,19 +46,26 @@ node scripts/build-dnd-data.js
 
 This regenerates all files in `/data`.
 
-## Adding new datasets later
+## Reference architecture
 
-The pipeline is intentionally modular to support future inputs from:
+Reference libraries are isolated under `/reference`:
 
 - `reference/srd`
-- `reference/modules`
+- `reference/api-database`
 - `reference/foundry`
+- `reference/foundry-dnd5e`
 
-To add support for new datasets:
+To clone/update configured sources, run:
 
-1. Extend file discovery roots (e.g., add new input directories).
-2. Add/adjust category filename matchers in `CATEGORY_CONFIG`.
-3. If a dataset uses a different schema, update:
-   - `unwrapRecords` for collection extraction
-   - `normalizeRecord` and `compactDescription` for field mapping
-4. Re-run the script and confirm the generated `/data/*.json` files.
+```bash
+./reference/scripts/sync-references.sh
+```
+
+## Extending later
+
+To add future datasets or swap source repositories:
+
+1. Update `reference/manifest.json`.
+2. Keep raw data in `/reference/*`.
+3. Extend `scripts/build-dnd-data.js` category matching and normalizers as needed.
+4. Re-run the build script and verify `/data/*.json` output.

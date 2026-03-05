@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const INPUT_ROOT = path.join(ROOT, 'reference', 'api-database', '5e-database');
+const REFERENCE_MANIFEST = path.join(ROOT, 'reference', 'manifest.json');
 const OUTPUT_ROOT = path.join(ROOT, 'data');
 
 const CATEGORY_CONFIG = [
@@ -54,12 +54,23 @@ const CATEGORY_CONFIG = [
 
 const SOURCE_HINTS = ['api-database/5e-database', 'srd', 'foundry', 'modules'];
 
+async function resolveInputRoot() {
+  const manifest = await readJson(REFERENCE_MANIFEST);
+  const configured = manifest?.datasets?.apiDatabase?.repositories?.[0]?.path;
+  if (configured) {
+    return path.join(ROOT, configured);
+  }
+
+  return path.join(ROOT, 'reference', 'api-database', '5e-database');
+}
+
 async function main() {
   await fs.mkdir(OUTPUT_ROOT, { recursive: true });
 
-  const inputFiles = await collectJsonFiles(INPUT_ROOT);
+  const inputRoot = await resolveInputRoot();
+  const inputFiles = await collectJsonFiles(inputRoot);
   if (!inputFiles.length) {
-    console.warn(`[build-dnd-data] No JSON files found under ${relativePath(INPUT_ROOT)}.`);
+    console.warn(`[build-dnd-data] No JSON files found under ${relativePath(inputRoot)}.`);
   }
 
   for (const category of CATEGORY_CONFIG) {
