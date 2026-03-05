@@ -1,15 +1,14 @@
 {
-  "version": 1,
   "repositories": [
     {
-      "name": "dnd-5e-srd",
-      "url": "https://github.com/BTMorton/dnd-5e-srd",
-      "path": "reference/srd/dnd-5e-srd"
+      "name": "5e-database",
+      "url": "https://github.com/5e-bits/5e-database.git",
+      "path": "api-database/5e-database"
     },
     {
-      "name": "5e-database",
-      "url": "https://github.com/5e-bits/5e-database",
-      "path": "reference/api-database/5e-database"
+      "name": "foundry-dnd5e",
+      "url": "https://github.com/foundryvtt/dnd5e.git",
+      "path": "foundry-dnd5e"
     }
   ]
 }
