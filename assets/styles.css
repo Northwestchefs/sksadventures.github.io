@@ -326,3 +326,144 @@ a:focus-visible {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.gallery-page {
+  padding-top: 14px;
+  padding-bottom: 40px;
+}
+
+.gallery-hero {
+  margin-bottom: 22px;
+}
+
+.gallery-root {
+  display: grid;
+  gap: 24px;
+}
+
+
+.gallery-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
+
+.gallery-section h2 {
+  margin-bottom: 12px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.gallery-grid img {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(124, 199, 255, 0.2);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  cursor: zoom-in;
+}
+
+.gallery-grid img:hover {
+  transform: scale(1.03);
+  border-color: rgba(124, 199, 255, 0.48);
+  box-shadow: 0 10px 24px rgba(124, 199, 255, 0.17);
+}
+
+.gallery-empty {
+  margin: 0;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 22px;
+  background: rgba(3, 4, 8, 0.93);
+  z-index: 1000;
+}
+
+.lightbox[hidden] {
+  display: none;
+}
+
+.lightbox-content {
+  margin: 0;
+  text-align: center;
+}
+
+.lightbox-content img {
+  max-width: min(1100px, 86vw);
+  max-height: 78vh;
+  border-radius: 12px;
+  border: 1px solid rgba(124, 199, 255, 0.35);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-content figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.lightbox-close,
+.lightbox-nav {
+  border: 1px solid rgba(124, 199, 255, 0.34);
+  color: var(--text);
+  background: rgba(14, 22, 38, 0.86);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 42px;
+  height: 42px;
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.lightbox-nav {
+  width: 44px;
+  height: 44px;
+  font-size: 1.6rem;
+}
+
+body.lightbox-open {
+  overflow: hidden;
+}
+
+@media (max-width: 680px) {
+  .lightbox {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 12px;
+  }
+
+  .lightbox-nav {
+    position: absolute;
+    bottom: 18px;
+  }
+
+  .lightbox-prev {
+    left: 18px;
+  }
+
+  .lightbox-next {
+    right: 18px;
+  }
+
+  .lightbox-content img {
+    max-width: 92vw;
+    max-height: 70vh;
+  }
+}

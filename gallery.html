@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fantasy Gallery | SKS Adventures</title>
+    <meta
+      name="description"
+      content="Browse fantasy artwork from SKS Adventures heroes, castles, characters, locations, monsters, and more."
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+      <nav class="nav" aria-label="Gallery navigation">
+        <a class="brand" href="index.html">SKS Adventures</a>
+        <div class="nav-links">
+          <a href="index.html">← Back to Home</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main-content" class="gallery-page section">
+      <section class="gallery-hero panel">
+        <h1>Fantasy Artwork Gallery</h1>
+        <p class="muted">
+          Discover heroes, ancient castles, strange monsters, and legendary locations from the world of SKS Adventures.
+        </p>
+      </section>
+
+      <div id="gallery-root" class="gallery-root" aria-live="polite"></div>
+    </main>
+
+    <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer" hidden>
+      <button class="lightbox-close" type="button" aria-label="Close viewer">×</button>
+      <button class="lightbox-nav lightbox-prev" type="button" aria-label="Previous image">❮</button>
+      <figure class="lightbox-content">
+        <img id="lightbox-image" src="" alt="" />
+        <figcaption id="lightbox-caption"></figcaption>
+      </figure>
+      <button class="lightbox-nav lightbox-next" type="button" aria-label="Next image">❯</button>
+    </div>
+
+    <script src="assets/gallery.js"></script>
+  </body>
+</html>
