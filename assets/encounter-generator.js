@@ -463,6 +463,104 @@
     };
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function convertEncounterToFoundryJournal(payload) {
+    if (!payload || !payload.encounter) {
+      return null;
+    }
+
+    const encounterName = payload.encounter.name || 'SKS Encounter';
+    const environment = payload.encounter.environment || 'any';
+    const difficulty = String(payload.encounter.difficulty || 'medium');
+    const partyLevel = payload.encounter.partyLevel ?? 'Unknown';
+    const partySize = payload.encounter.partySize ?? 'Unknown';
+    const monsters = Array.isArray(payload.monsters) ? payload.monsters : [];
+
+    const overviewHtml = `
+<h1>${escapeHtml(encounterName)}</h1>
+<h2>Encounter Overview</h2>
+<p><strong>Environment:</strong> ${escapeHtml(environment)}</p>
+<p><strong>Difficulty:</strong> ${escapeHtml(difficulty)}</p>
+<p><strong>Party Level:</strong> ${escapeHtml(partyLevel)}</p>
+<p><strong>Party Size:</strong> ${escapeHtml(partySize)}</p>
+<h2>Read Aloud</h2>
+<blockquote>
+  <p>${escapeHtml(`The air grows tense as the party enters this ${environment} battleground. Foes move with purpose, testing a level ${partyLevel} group of ${partySize} adventurers against a ${difficulty.toUpperCase()} challenge.`)}</p>
+</blockquote>
+`.trim();
+
+    const creaturesList = monsters.length
+      ? monsters.map((monster) => `<li><strong>${escapeHtml(monster.name)} ×${escapeHtml(monster.count)}</strong> — CR ${escapeHtml(monster.cr)}</li>`).join('')
+      : '<li><strong>None listed</strong> — CR 0</li>';
+
+    const monstersHtml = `
+<h2>Creatures</h2>
+<ul>${creaturesList}</ul>
+<h2>Tactics</h2>
+<p>${escapeHtml(payload.journal?.bossBehavior || 'The opposition focuses on battlefield pressure, attempting to split the party and threaten isolated targets first.')}</p>
+`.trim();
+
+    const hazardItems = Array.isArray(payload.journal?.environmentHazards) && payload.journal.environmentHazards.length
+      ? payload.journal.environmentHazards.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
+      : '<li>Terrain pressure is minimal; use movement and line-of-sight to create tactical tension.</li>';
+
+    const runningHtml = `
+<h2>Environmental Hazards</h2>
+<ul>${hazardItems}</ul>
+<h2>Combat Notes</h2>
+<p>Use initiative pacing to spotlight enemy roles, reinforce the environment theme, and maintain pressure consistent with a ${escapeHtml(difficulty)} encounter.</p>
+`.trim();
+
+    const treasureItems = Array.isArray(payload.journal?.treasure) && payload.journal.treasure.length
+      ? payload.journal.treasure.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
+      : '<li>2d4 gemstones worth 25 gp each</li>';
+
+    const treasureHtml = `
+<h2>Treasure</h2>
+<ul>${treasureItems}</ul>
+`.trim();
+
+    const gmNotes = [];
+    if (Array.isArray(payload.journal?.narrativeHooks)) {
+      gmNotes.push(...payload.journal.narrativeHooks);
+    }
+    if (Array.isArray(payload.journal?.bossPhases)) {
+      gmNotes.push(...payload.journal.bossPhases);
+    }
+    if (Array.isArray(payload.journal?.lairActions)) {
+      gmNotes.push(...payload.journal.lairActions);
+    }
+
+    const gmNotesHtml = `
+<section class="secret">
+  <h3>GM Notes</h3>
+  <ul>${(gmNotes.length ? gmNotes : ['This encounter is intended to drain spell resources.', 'Consider escalating difficulty if the party dominates quickly.']).map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>
+</section>
+`.trim();
+
+    return {
+      name: encounterName,
+      pages: [
+        { name: 'Overview', type: 'text', text: { format: 1, content: overviewHtml } },
+        { name: 'Monsters', type: 'text', text: { format: 1, content: monstersHtml } },
+        { name: 'Running the Encounter', type: 'text', text: { format: 1, content: runningHtml } },
+        { name: 'Treasure', type: 'text', text: { format: 1, content: treasureHtml } },
+        { name: 'GM Notes', type: 'text', text: { format: 1, content: gmNotesHtml } }
+      ],
+      ownership: {
+        default: 0
+      }
+    };
+  }
+
   function downloadFile(name, content, type = 'text/plain') {
     const blob = new Blob([content], { type });
     const url = URL.createObjectURL(blob);
@@ -477,17 +575,18 @@
 
   function exportFoundryEncounter() {
     const payload = buildEncounterExportPayload();
-    if (!payload) {
+    const journalDocument = convertEncounterToFoundryJournal(payload);
+    if (!journalDocument) {
       if (exportStatusEl) {
         exportStatusEl.textContent = 'Generate encounters before exporting.';
       }
       return;
     }
 
-    downloadFile('sks-encounter.json', JSON.stringify(payload, null, 2), 'application/json');
+    downloadFile('sks-encounter-foundry.json', JSON.stringify(journalDocument, null, 2), 'application/json');
 
     if (exportStatusEl) {
-      exportStatusEl.textContent = 'Downloaded sks-encounter.json. Run foundry/sks-encounter-importer-macro.js inside Foundry to import it.';
+      exportStatusEl.textContent = 'Downloaded sks-encounter-foundry.json as a Foundry JournalEntry (v13).';
     }
   }
 
@@ -534,7 +633,7 @@
       exportBtnEl.disabled = options.length === 0;
     }
     if (exportStatusEl) {
-      exportStatusEl.textContent = options.length ? 'Ready to download sks-encounter.json for the Foundry v13 importer macro.' : 'No encounter available to export.';
+      exportStatusEl.textContent = options.length ? 'Ready to export to Foundry Journal (v13).' : 'No encounter available to export.';
     }
   }
 
