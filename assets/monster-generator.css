@@ -1,0 +1,233 @@
+.monster-studio-page {
+  width: min(1300px, 94vw);
+  margin: 0 auto;
+  padding: 20px 0 48px;
+}
+
+.studio-hero,
+.studio-toolbar,
+.studio-form,
+.studio-preview {
+  background:
+    radial-gradient(circle at top right, rgba(124, 199, 255, 0.08), transparent 52%),
+    linear-gradient(175deg, rgba(17, 26, 43, 0.95), rgba(8, 14, 26, 0.97));
+  border: 1px solid rgba(124, 199, 255, 0.22);
+}
+
+.studio-hero {
+  padding: 20px;
+  margin-top: 14px;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  font-size: 0.78rem;
+}
+
+.studio-toolbar {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  padding: 16px;
+}
+
+.toolbar-group,
+.toolbar-actions {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.toolbar-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.studio-toolbar select,
+.studio-toolbar input,
+.studio-form input,
+.studio-form textarea,
+.studio-form select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(5, 10, 20, 0.75);
+  color: var(--text);
+  padding: 9px 10px;
+}
+
+.studio-status {
+  grid-column: 1 / -1;
+  min-height: 1.2rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.studio-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.studio-form {
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+}
+
+.studio-section {
+  border: 1px solid rgba(124, 199, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(12, 22, 40, 0.7);
+}
+
+.studio-section summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px;
+  font-weight: 600;
+  color: #dceaff;
+  border-bottom: 1px solid transparent;
+}
+
+.studio-section[open] summary {
+  border-color: rgba(124, 199, 255, 0.2);
+}
+
+.studio-section-content {
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.entry-list {
+  display: grid;
+  gap: 10px;
+}
+
+.entry-item {
+  border: 1px solid rgba(225, 182, 91, 0.24);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(25, 16, 8, 0.18);
+}
+
+.entry-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.tiny {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.studio-preview {
+  padding: 14px;
+  position: sticky;
+  top: 10px;
+  height: calc(100vh - 24px);
+  overflow: auto;
+}
+
+.preview-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.preview-tab {
+  border: 1px solid var(--border);
+  background: rgba(5, 12, 20, 0.8);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.preview-tab.is-active {
+  border-color: rgba(225, 182, 91, 0.5);
+  color: #ffe4ad;
+}
+
+.statblock h2 {
+  margin-bottom: 4px;
+}
+
+.stat-sub {
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.stat-grid,
+.ability-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
+.ability-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.pill {
+  display: inline-block;
+  border: 1px solid rgba(124, 199, 255, 0.35);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  color: #d8ebff;
+  font-size: 0.85rem;
+}
+
+.preview-card {
+  border: 1px solid rgba(124, 199, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(10, 19, 33, 0.75);
+  padding: 12px;
+}
+
+.json-panel {
+  white-space: pre-wrap;
+  font-size: 0.83rem;
+  line-height: 1.45;
+  color: #d5f0ff;
+  background: rgba(4, 11, 22, 0.7);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+@media (max-width: 1100px) {
+  .studio-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-form,
+  .studio-preview {
+    max-height: none;
+    height: auto;
+    position: static;
+  }
+
+  .ability-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

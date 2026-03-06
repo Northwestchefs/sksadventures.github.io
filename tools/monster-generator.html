@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monster Generator Studio | SKS Adventures</title>
+    <meta
+      name="description"
+      content="Build premium D&D 5e monsters with advanced combat features, lore tools, and Foundry-ready JSON architecture."
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <link rel="stylesheet" href="../assets/monster-generator.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <main id="main-content" class="monster-studio-page">
+      <a class="btn btn-secondary" href="index.html">← Back to Tools</a>
+
+      <section class="card studio-hero" aria-labelledby="studio-title">
+        <p class="kicker">Dungeon Master's Forge • Premium Monster Studio</p>
+        <h1 id="studio-title">Monster Generator</h1>
+        <p>
+          Craft cinematic foes, terrifying bosses, and memorable NPC adversaries with a professional-grade
+          creation flow built for campaign prep, encounter design, and future Foundry export workflows.
+        </p>
+      </section>
+
+      <section class="studio-toolbar card" aria-label="Monster generator controls">
+        <div class="toolbar-group">
+          <label for="preset-select">Starter Template</label>
+          <select id="preset-select"></select>
+          <button id="apply-preset" class="btn btn-secondary" type="button">Apply Preset</button>
+        </div>
+        <div class="toolbar-group">
+          <label for="random-cr">Random Monster by CR</label>
+          <select id="random-cr"></select>
+          <button id="randomize-monster" class="btn" type="button">Create Random Monster</button>
+        </div>
+        <div class="toolbar-actions">
+          <button id="save-local" class="btn btn-secondary" type="button">Save Local</button>
+          <button id="load-local" class="btn btn-secondary" type="button">Load Local</button>
+          <button id="export-json" class="btn btn-secondary" type="button">Export JSON</button>
+          <label class="btn btn-secondary file-btn" for="import-json">Import JSON</label>
+          <input id="import-json" type="file" accept="application/json" hidden />
+        </div>
+        <p id="studio-status" class="studio-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="studio-layout">
+        <form id="monster-form" class="card studio-form" aria-label="Monster builder"></form>
+
+        <aside class="card studio-preview" aria-label="Monster preview">
+          <div class="preview-tabs" role="tablist" aria-label="Preview views">
+            <button class="preview-tab is-active" role="tab" data-tab="statblock" aria-selected="true">5e Statblock</button>
+            <button class="preview-tab" role="tab" data-tab="card" aria-selected="false">Summary Card</button>
+            <button class="preview-tab" role="tab" data-tab="json" aria-selected="false">JSON</button>
+          </div>
+          <div id="preview-statblock" class="preview-panel"></div>
+          <div id="preview-card" class="preview-panel" hidden></div>
+          <pre id="preview-json" class="preview-panel json-panel" hidden></pre>
+        </aside>
+      </section>
+    </main>
+
+    <script src="../assets/monster-generator.js" defer></script>
+  </body>
+</html>
