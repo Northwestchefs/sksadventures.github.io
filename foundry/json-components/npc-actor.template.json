@@ -1,0 +1,35 @@
+{
+  "name": "Basilisk",
+  "type": "npc",
+  "img": "icons/svg/mystery-man.svg",
+  "folder": "<actor-folder-id>",
+  "system": {
+    "details": {
+      "cr": 3
+    },
+    "attributes": {
+      "hp": {
+        "value": 95,
+        "max": 95
+      },
+      "ac": {
+        "value": 14
+      },
+      "init": {
+        "value": 2
+      }
+    }
+  },
+  "prototypeToken": {
+    "name": "Basilisk",
+    "disposition": -1,
+    "actorLink": false,
+    "randomImg": false
+  },
+  "flags": {
+    "sks": {
+      "role": "encounter-monster",
+      "source": "sks-encounter"
+    }
+  }
+}

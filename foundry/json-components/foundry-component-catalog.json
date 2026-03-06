@@ -1,0 +1,48 @@
+{
+  "name": "SKS Foundry VTT Component Catalog",
+  "version": "1.0.0",
+  "generatedFrom": {
+    "encounterExport": "export/sks-encounter.json",
+    "importMacro": "foundry/sks-encounter-importer-macro.js",
+    "foundryGuideIndex": "dnd-guide/foundry-vtt/index.html",
+    "referenceManifest": "reference/manifest.json"
+  },
+  "components": [
+    {
+      "id": "encounter-package",
+      "kind": "schema",
+      "path": "foundry/json-components/encounter-package.schema.json",
+      "purpose": "Top-level bundle for world import payloads"
+    },
+    {
+      "id": "npc-actor",
+      "kind": "template",
+      "path": "foundry/json-components/npc-actor.template.json",
+      "purpose": "dnd5e NPC actor data"
+    },
+    {
+      "id": "scene",
+      "kind": "template",
+      "path": "foundry/json-components/scene.template.json",
+      "purpose": "Scene document data and SKS flags"
+    },
+    {
+      "id": "token",
+      "kind": "template",
+      "path": "foundry/json-components/token.template.json",
+      "purpose": "Token creation payload with positional data"
+    },
+    {
+      "id": "combat",
+      "kind": "template",
+      "path": "foundry/json-components/combat.template.json",
+      "purpose": "Combat document and combatant initiative data"
+    },
+    {
+      "id": "journal-entry",
+      "kind": "template",
+      "path": "foundry/json-components/journal-entry.template.json",
+      "purpose": "Encounter brief journal entry pages"
+    }
+  ]
+}

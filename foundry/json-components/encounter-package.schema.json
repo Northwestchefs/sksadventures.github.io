@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sksadventures.github.io/foundry/json-components/encounter-package.schema.json",
+  "title": "SKS Foundry Encounter Package",
+  "description": "Top-level JSON package format for importing generated encounters into Foundry VTT dnd5e worlds.",
+  "type": "object",
+  "required": ["meta", "encounter", "actors", "scene", "tokens", "combat", "journalEntry"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["generator", "foundryVersion", "system", "sourceReferences", "exportedAt"],
+      "properties": {
+        "generator": { "type": "string" },
+        "foundryVersion": { "type": "string" },
+        "system": { "type": "string" },
+        "sourceReferences": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "exportedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "encounter": {
+      "type": "object",
+      "required": ["name", "difficulty", "environment", "partyLevel", "partySize", "adjustedXp", "rawXp"],
+      "properties": {
+        "name": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard", "deadly"] },
+        "environment": { "type": "string" },
+        "partyLevel": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "partySize": { "type": "integer", "minimum": 1 },
+        "adjustedXp": { "type": "integer", "minimum": 0 },
+        "rawXp": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "actors": {
+      "type": "array",
+      "description": "Actor document templates for dnd5e NPCs used by the encounter.",
+      "items": { "$ref": "./npc-actor.template.json" },
+      "minItems": 1
+    },
+    "scene": {
+      "$ref": "./scene.template.json"
+    },
+    "tokens": {
+      "type": "array",
+      "description": "Token creation payloads for scene.createEmbeddedDocuments('Token', ...).",
+      "items": { "$ref": "./token.template.json" },
+      "minItems": 1
+    },
+    "combat": {
+      "$ref": "./combat.template.json"
+    },
+    "journalEntry": {
+      "$ref": "./journal-entry.template.json"
+    }
+  },
+  "additionalProperties": false
+}

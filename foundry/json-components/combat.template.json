@@ -1,0 +1,17 @@
+{
+  "scene": "<scene-id>",
+  "active": true,
+  "round": 1,
+  "combatants": [
+    {
+      "tokenId": "<token-id-1>",
+      "actorId": "<actor-id-1>",
+      "initiative": 18
+    },
+    {
+      "tokenId": "<token-id-2>",
+      "actorId": "<actor-id-1>",
+      "initiative": 11
+    }
+  ]
+}
