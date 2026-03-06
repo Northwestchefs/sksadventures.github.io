@@ -2,6 +2,45 @@ const STORAGE_KEY = 'sks-monster-studio-v1';
 
 const CR_OPTIONS = ['0', '1/8', '1/4', '1/2', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
 
+const SRD_DATA_PATH = '../data/monsters.json';
+const SRD_IMPORT_CAP = 12;
+
+const CR_BASELINES = {
+  '0': { ac: 13, hpMin: 1, hpMax: 7, dprMin: 0, dprMax: 1 },
+  '1/8': { ac: 13, hpMin: 7, hpMax: 35, dprMin: 2, dprMax: 3 },
+  '1/4': { ac: 13, hpMin: 36, hpMax: 49, dprMin: 4, dprMax: 5 },
+  '1/2': { ac: 13, hpMin: 50, hpMax: 70, dprMin: 6, dprMax: 8 },
+  '1': { ac: 13, hpMin: 71, hpMax: 85, dprMin: 9, dprMax: 14 },
+  '2': { ac: 13, hpMin: 86, hpMax: 100, dprMin: 15, dprMax: 20 },
+  '3': { ac: 13, hpMin: 101, hpMax: 115, dprMin: 21, dprMax: 26 },
+  '4': { ac: 14, hpMin: 116, hpMax: 130, dprMin: 27, dprMax: 32 },
+  '5': { ac: 15, hpMin: 131, hpMax: 145, dprMin: 33, dprMax: 38 },
+  '6': { ac: 15, hpMin: 146, hpMax: 160, dprMin: 39, dprMax: 44 },
+  '7': { ac: 15, hpMin: 161, hpMax: 175, dprMin: 45, dprMax: 50 },
+  '8': { ac: 16, hpMin: 176, hpMax: 190, dprMin: 51, dprMax: 56 },
+  '9': { ac: 16, hpMin: 191, hpMax: 205, dprMin: 57, dprMax: 62 },
+  '10': { ac: 17, hpMin: 206, hpMax: 220, dprMin: 63, dprMax: 68 },
+  '11': { ac: 17, hpMin: 221, hpMax: 235, dprMin: 69, dprMax: 74 },
+  '12': { ac: 17, hpMin: 236, hpMax: 250, dprMin: 75, dprMax: 80 },
+  '13': { ac: 18, hpMin: 251, hpMax: 265, dprMin: 81, dprMax: 86 },
+  '14': { ac: 18, hpMin: 266, hpMax: 280, dprMin: 87, dprMax: 92 },
+  '15': { ac: 18, hpMin: 281, hpMax: 295, dprMin: 93, dprMax: 98 },
+  '16': { ac: 18, hpMin: 296, hpMax: 310, dprMin: 99, dprMax: 104 },
+  '17': { ac: 19, hpMin: 311, hpMax: 325, dprMin: 105, dprMax: 110 },
+  '18': { ac: 19, hpMin: 326, hpMax: 340, dprMin: 111, dprMax: 116 },
+  '19': { ac: 19, hpMin: 341, hpMax: 355, dprMin: 117, dprMax: 122 },
+  '20': { ac: 19, hpMin: 356, hpMax: 400, dprMin: 123, dprMax: 140 },
+};
+
+const SRD_FALLBACK_MONSTERS = [
+  { name: 'Goblin', index: 'goblin', challenge_rating: '1/4', size: 'Small', type: 'humanoid', subtype: 'goblinoid', alignment: 'neutral evil', armor_class: 15, hit_points: 7, hit_dice: '2d6', speed: { walk: '30 ft.' }, strength: 8, dexterity: 14, constitution: 10, intelligence: 10, wisdom: 8, charisma: 8, languages: 'Common, Goblin', senses: { darkvision: '60 ft.', passive_perception: 9 }, actions: [{ name: 'Scimitar', attack_bonus: 4, desc: 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) slashing damage.' }] },
+  { name: 'Orc', index: 'orc', challenge_rating: '1/2', size: 'Medium', type: 'humanoid', subtype: 'orc', alignment: 'chaotic evil', armor_class: 13, hit_points: 15, hit_dice: '2d8 + 6', speed: { walk: '30 ft.' }, strength: 16, dexterity: 12, constitution: 16, intelligence: 7, wisdom: 11, charisma: 10, languages: 'Common, Orc', senses: { darkvision: '60 ft.', passive_perception: 10 }, actions: [{ name: 'Greataxe', attack_bonus: 5, desc: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 9 (1d12 + 3) slashing damage.' }] },
+  { name: 'Skeleton', index: 'skeleton', challenge_rating: '1/4', size: 'Medium', type: 'undead', subtype: '', alignment: 'lawful evil', armor_class: 13, hit_points: 13, hit_dice: '2d8 + 4', speed: { walk: '30 ft.' }, strength: 10, dexterity: 14, constitution: 15, intelligence: 6, wisdom: 8, charisma: 5, languages: 'Understands languages it knew in life but can\'t speak', senses: { darkvision: '60 ft.', passive_perception: 9 }, actions: [{ name: 'Shortsword', attack_bonus: 4, desc: 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d6 + 2) piercing damage.' }] },
+  { name: 'Ogre', index: 'ogre', challenge_rating: '2', size: 'Large', type: 'giant', subtype: '', alignment: 'chaotic evil', armor_class: 11, hit_points: 59, hit_dice: '7d10 + 21', speed: { walk: '40 ft.' }, strength: 19, dexterity: 8, constitution: 16, intelligence: 5, wisdom: 7, charisma: 7, languages: 'Common, Giant', senses: { passive_perception: 8 }, actions: [{ name: 'Greatclub', attack_bonus: 6, desc: 'Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 13 (2d8 + 4) bludgeoning damage.' }] },
+  { name: 'Young Red Dragon', index: 'young-red-dragon', challenge_rating: '10', size: 'Large', type: 'dragon', subtype: '', alignment: 'chaotic evil', armor_class: 18, hit_points: 178, hit_dice: '17d10 + 85', speed: { walk: '40 ft.', climb: '40 ft.', fly: '80 ft.' }, strength: 23, dexterity: 10, constitution: 21, intelligence: 14, wisdom: 11, charisma: 19, languages: 'Common, Draconic', senses: { blindsight: '30 ft.', darkvision: '120 ft.', passive_perception: 17 }, actions: [{ name: 'Bite', attack_bonus: 10, desc: 'Melee Weapon Attack: +10 to hit, reach 10 ft., one target. Hit: 17 (2d10 + 6) piercing damage plus 7 (2d6) fire damage.' }] },
+  { name: 'Lich', index: 'lich', challenge_rating: '21', size: 'Medium', type: 'undead', subtype: '', alignment: 'any evil alignment', armor_class: 17, hit_points: 135, hit_dice: '18d8 + 54', speed: { walk: '30 ft.' }, strength: 11, dexterity: 16, constitution: 16, intelligence: 20, wisdom: 14, charisma: 16, languages: 'Common plus up to five other languages', senses: { truesight: '120 ft.', passive_perception: 12 }, actions: [{ name: 'Paralyzing Touch', attack_bonus: 12, desc: 'Melee Spell Attack: +12 to hit, reach 5 ft., one creature. Hit: 10 (3d6) cold damage.' }] },
+];
+
 const FOUNDATION_FLAGS = {
   foundryHint: {
     actorType: 'npc',
@@ -87,6 +126,8 @@ const formEl = document.getElementById('monster-form');
 const statusEl = document.getElementById('studio-status');
 
 let monster = createDefaultMonster();
+let srdMonsters = [];
+let srdMonstersByCr = {};
 
 init();
 
@@ -154,7 +195,8 @@ function createDefaultMonster() {
   };
 }
 
-function init() {
+async function init() {
+  await loadSrdMonsters();
   populateSelects();
   renderForm();
   renderPreview();
@@ -165,6 +207,7 @@ function init() {
 
   document.getElementById('apply-preset').addEventListener('click', applyPreset);
   document.getElementById('randomize-monster').addEventListener('click', randomFromCr);
+  document.getElementById('import-srd-monster').addEventListener('click', loadSelectedSrdMonster);
   document.getElementById('save-local').addEventListener('click', saveLocal);
   document.getElementById('load-local').addEventListener('click', loadLocal);
   document.getElementById('export-json').addEventListener('click', exportJson);
@@ -182,6 +225,9 @@ function populateSelects() {
   const randomStyle = document.getElementById('random-style');
   randomStyle.innerHTML = Object.entries(RANDOM_STYLES).map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
   randomStyle.value = 'balanced';
+
+  populateSrdMonsterSelect(randomCr.value);
+  randomCr.addEventListener('change', () => populateSrdMonsterSelect(randomCr.value));
 }
 
 function renderForm() {
@@ -444,8 +490,10 @@ function randomFromCr() {
 
 function generateRandomMonster(cr, styleKey) {
   const profile = STYLE_PROFILES[styleKey] || STYLE_PROFILES.balanced;
-  const numericCr = crToNumber(cr);
-  const names = [...(RANDOM_BY_CR[cr] || []), ...profile.names, ...Object.values(PRESETS).map((preset) => preset.name)];
+  const normalizedCr = normalizeCrKey(cr);
+  const numericCr = crToNumber(normalizedCr);
+  const baseline = getCrBaseline(normalizedCr);
+  const names = [...(RANDOM_BY_CR[normalizedCr] || []), ...profile.names, ...Object.values(PRESETS).map((preset) => preset.name)];
   const name = pick(names);
   const size = weightedPick([
     { value: 'Tiny', weight: numericCr <= 2 ? 1 : 0 },
@@ -466,11 +514,8 @@ function generateRandomMonster(cr, styleKey) {
   const environmentList = pickMany(ENVIRONMENTS, randomInt(2, 5));
   const tags = pickMany(['alpha', 'lurker', 'hunter', 'ritual', 'sentinel', 'siege', 'pack', 'arcane', 'mythic', 'venomous', 'frenzied', 'eldritch', 'planar', 'cunning'], randomInt(2, 4)).join(', ');
 
-  const proficiencyBonus = Math.max(2, Math.ceil((numericCr + 1) / 4) + 1);
-  const ac = randomInt(11 + Math.floor(numericCr / 2), 15 + Math.floor(numericCr / 2));
-  const hp = randomInt(18 + numericCr * 15, 46 + numericCr * 30);
-  const hitDiceCount = Math.max(3, Math.round(hp / 11));
-  const conMod = randomInt(1, Math.max(3, Math.floor(numericCr / 2) + 3));
+  const proficiencyBonus = Math.max(2, Math.min(9, 2 + Math.floor((numericCr - 1) / 4)));
+  const hp = randomInt(baseline.hpMin, baseline.hpMax);
 
   const speed = {
     walk: randomInt(25, 50),
@@ -481,14 +526,31 @@ function generateRandomMonster(cr, styleKey) {
     hover: chance(0.26),
   };
 
-  const abilities = {
-    str: clamp(8 + randomInt(0, 10) + Math.floor(numericCr / 2), 3, 30),
-    dex: clamp(8 + randomInt(0, 12), 3, 30),
-    con: clamp(10 + randomInt(0, 10) + Math.floor(numericCr / 3), 3, 30),
-    int: clamp(4 + randomInt(0, 16), 1, 30),
-    wis: clamp(6 + randomInt(0, 14), 1, 30),
-    cha: clamp(5 + randomInt(0, 16), 1, 30),
+  const roleAbilityBoosts = {
+    brute: { str: 3, con: 2 }, skirmisher: { dex: 3, wis: 1 }, controller: { int: 3, wis: 1 }, artillery: { dex: 2, int: 2 },
+    support: { wis: 2, cha: 2 }, defender: { con: 3, str: 1 }, boss: { str: 2, con: 2, cha: 1 }, ambusher: { dex: 3, str: 1 },
   };
+
+  const abilities = {
+    str: clamp(8 + randomInt(0, 8) + Math.floor(numericCr / 2), 3, 30),
+    dex: clamp(8 + randomInt(0, 8) + (styleKey === 'swarm' ? 2 : 0), 3, 30),
+    con: clamp(10 + randomInt(0, 8) + Math.floor(numericCr / 3), 3, 30),
+    int: clamp(4 + randomInt(0, 10), 1, 30),
+    wis: clamp(6 + randomInt(0, 10), 1, 30),
+    cha: clamp(5 + randomInt(0, 10), 1, 30),
+  };
+
+  const boosts = roleAbilityBoosts[role] || {};
+  Object.entries(boosts).forEach(([ability, amount]) => {
+    abilities[ability] = clamp((abilities[ability] || 10) + amount, 1, 30);
+  });
+
+  const ac = clamp(baseline.ac + randomInt(-1, 2) + (role === 'defender' ? 1 : 0), 10, 25);
+  const hitDieSize = numericCr >= 10 ? 12 : numericCr >= 5 ? 10 : 8;
+  const avgPerDie = hitDieSize / 2 + 0.5;
+  const conMod = Math.floor((abilities.con - 10) / 2);
+  const hitDiceCount = Math.max(2, Math.round(hp / Math.max(1, avgPerDie + conMod)));
+  const hitDiceBonus = Math.max(0, hitDiceCount * conMod);
 
   const mainDamage = pick(DAMAGE_TYPES);
   const attackCount = randomInt(1, numericCr >= 8 ? 3 : 2);
@@ -518,14 +580,14 @@ function generateRandomMonster(cr, styleKey) {
       alignment,
       environment: environmentList.join(', '),
       role,
-      cr,
+      cr: normalizedCr,
       origin,
     },
     core: {
       ...monster.core,
       ac,
       hp,
-      hitDice: `${hitDiceCount}d12 + ${hitDiceCount * conMod}`,
+      hitDice: `${hitDiceCount}d${hitDieSize}${hitDiceBonus ? ` + ${hitDiceBonus}` : ''}`,
       speed,
       abilities,
       proficiencyBonus,
@@ -558,7 +620,7 @@ function generateRandomMonster(cr, styleKey) {
     },
     flavor: {
       ...monster.flavor,
-      summary: `${name} is a ${roleFlavor.toLowerCase()} ${type} built for CR ${cr} encounters with ${RANDOM_STYLES[styleKey] || 'balanced'} flavor.`,
+      summary: `${name} is a ${roleFlavor.toLowerCase()} ${type} built for CR ${normalizedCr} encounters with ${RANDOM_STYLES[styleKey] || 'balanced'} flavor.`,
       appearance: pick(['Armor plates etched in runes.', 'A distorted silhouette with too many eyes.', 'Crystalline growths pulse with internal light.', 'Its body leaks elemental residue with every movement.', 'Its shadow moves half a second out of sync.', 'Each step leaves a brief sigil of power on the ground.']),
       behavior: pick(['Tests defenses before committing.', 'Prioritizes isolated and wounded prey.', 'Retreats only to set an ambush.', 'Escalates quickly if bloodied.', 'Switches targets whenever someone resists its preferred damage type.']),
       tactics: pick(['Uses terrain to split the party.', 'Pressures spellcasters first.', 'Focuses one target until they drop.', 'Combines crowd control with burst damage.', 'Cycles between mobility and lockdown abilities each round.']),
@@ -573,7 +635,9 @@ function generateRandomMonster(cr, styleKey) {
 
 function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey }) {
   const attackTheme = pick(ATTACK_THEMES);
-  const avgDamage = randomInt(Math.max(4, Math.floor(4 + numericCr * 1.7)), Math.max(8, Math.floor(12 + numericCr * 3)));
+  const crKey = normalizeCrKey(numericCr);
+  const baseline = getCrBaseline(crKey);
+  const avgDamage = randomInt(Math.max(2, baseline.dprMin), Math.max(4, baseline.dprMax));
   const dice = damageDice(avgDamage, attackTheme);
   const toHit = `+${Math.max(3, proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.dex) - 10) / 2))}`;
   const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.wis) - 10) / 2);
@@ -1160,6 +1224,267 @@ function arrayOrEmpty(value) {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') return value.split(',').map((part) => part.trim()).filter(Boolean);
   return [];
+}
+
+function normalizeCrKey(value) {
+  const normalized = String(value).trim();
+  if (CR_BASELINES[normalized]) return normalized;
+  const n = Number(normalized);
+  if (Number.isNaN(n)) return '1';
+  if (n <= 0) return '0';
+  return String(Math.min(20, Math.floor(n)));
+}
+
+function getCrBaseline(cr) {
+  return CR_BASELINES[normalizeCrKey(cr)] || CR_BASELINES['1'];
+}
+
+async function loadSrdMonsters() {
+  try {
+    const response = await fetch(SRD_DATA_PATH);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const parsed = await response.json();
+    srdMonsters = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    srdMonsters = [];
+  }
+
+  const normalized = srdMonsters
+    .map((entry) => normalizeSrdEntry(entry))
+    .filter((entry) => entry && entry.name && entry.challenge_rating);
+
+  const fallback = SRD_FALLBACK_MONSTERS.map((entry) => normalizeSrdEntry(entry));
+  const merged = [...normalized];
+  fallback.forEach((entry) => {
+    if (!merged.some((candidate) => candidate.index === entry.index)) merged.push(entry);
+  });
+
+  srdMonsters = merged;
+  srdMonstersByCr = groupSrdByCr(merged);
+}
+
+function groupSrdByCr(list) {
+  return list.reduce((acc, entry) => {
+    const cr = normalizeCrKey(entry.challenge_rating);
+    if (!acc[cr]) acc[cr] = [];
+    acc[cr].push(entry);
+    return acc;
+  }, {});
+}
+
+function populateSrdMonsterSelect(cr) {
+  const select = document.getElementById('srd-monster-select');
+  if (!select) return;
+  const list = (srdMonstersByCr[normalizeCrKey(cr)] || []).slice(0, SRD_IMPORT_CAP);
+  if (!list.length) {
+    select.innerHTML = '<option value=>No SRD monsters for this CR</option>';
+    select.value = '';
+    return;
+  }
+  select.innerHTML = list.map((entry, idx) => `<option value="${entry.index || idx}">${entry.name}</option>`).join('');
+}
+
+function loadSelectedSrdMonster() {
+  const cr = document.getElementById('random-cr').value;
+  const select = document.getElementById('srd-monster-select');
+  const list = srdMonstersByCr[normalizeCrKey(cr)] || [];
+  if (!list.length || !select?.value) {
+    setStatus('No SRD monster available for this CR selection.', true);
+    return;
+  }
+  const selected = list.find((entry, idx) => (entry.index || String(idx)) === select.value);
+  if (!selected) {
+    setStatus('Could not resolve selected SRD monster.', true);
+    return;
+  }
+
+  monster = importSrdMonster(selected, monster);
+  setStatus(`Loaded SRD monster: ${selected.name}.`);
+  renderForm();
+  renderPreview();
+}
+
+function importSrdMonster(srd, currentMonster) {
+  const subtitleSubtype = srd.subtype ? ` (${srd.subtype})` : '';
+  const subtitle = `${srd.size || 'Medium'} ${srd.type || 'monstrosity'}${subtitleSubtype}, ${srd.alignment || 'unaligned'}`;
+  const movement = normalizeSrdSpeed(srd.speed);
+  const actions = arrayOrEmpty(srd.actions).map((action) => ({
+    name: action.name || 'Action',
+    category: 'Action',
+    description: action.desc || '',
+    saveDc: '',
+    recharge: '',
+    usage: '',
+    trigger: '',
+  }));
+
+  return {
+    ...currentMonster,
+    identity: {
+      ...currentMonster.identity,
+      name: srd.name || currentMonster.identity.name,
+      subtitle,
+      size: srd.size || currentMonster.identity.size,
+      type: srd.type || currentMonster.identity.type,
+      tags: srd.subtype || currentMonster.identity.tags,
+      alignment: srd.alignment || currentMonster.identity.alignment,
+      cr: normalizeCrKey(srd.challenge_rating || currentMonster.identity.cr),
+      role: currentMonster.identity.role,
+      ancestryRace: '',
+      ancestrySubrace: '',
+    },
+    core: {
+      ...currentMonster.core,
+      ac: parseArmorClass(srd.armor_class) || currentMonster.core.ac,
+      hp: Number(srd.hit_points) || currentMonster.core.hp,
+      hitDice: srd.hit_dice || currentMonster.core.hitDice,
+      speed: movement,
+      abilities: {
+        str: Number(srd.strength) || currentMonster.core.abilities.str,
+        dex: Number(srd.dexterity) || currentMonster.core.abilities.dex,
+        con: Number(srd.constitution) || currentMonster.core.abilities.con,
+        int: Number(srd.intelligence) || currentMonster.core.abilities.int,
+        wis: Number(srd.wisdom) || currentMonster.core.abilities.wis,
+        cha: Number(srd.charisma) || currentMonster.core.abilities.cha,
+      },
+      proficiencyBonus: inferProficiencyBonusFromCr(srd.challenge_rating),
+      passivePerception: inferPassivePerception(srd.senses, srd.wisdom),
+      initiativeBonus: Math.floor(((Number(srd.dexterity) || 10) - 10) / 2),
+    },
+    defense: {
+      ...currentMonster.defense,
+      vulnerabilities: arrayOrEmpty(srd.damage_vulnerabilities),
+      resistances: arrayOrEmpty(srd.damage_resistances),
+      immunities: arrayOrEmpty(srd.damage_immunities),
+      conditionImmunities: arrayOrEmpty(srd.condition_immunities),
+      senses: formatSrdSenses(srd.senses),
+      languages: srd.languages || '',
+      telepathy: srd.languages?.toLowerCase().includes('telepathy') ? 'Telepathy listed in languages' : '',
+    },
+    combat: {
+      ...currentMonster.combat,
+      traits: mapSrdFeatures(srd.special_abilities, 'Trait'),
+      actions,
+      bonusActions: mapSrdFeatures(srd.bonus_actions, 'Bonus Action'),
+      reactions: mapSrdFeatures(srd.reactions, 'Reaction'),
+      legendaryActions: mapSrdFeatures(srd.legendary_actions, 'Legendary'),
+      lairActions: [],
+      mythic: [],
+      attacks: mapSrdActionsToAttacks(srd.actions),
+      spellcasting: mapSrdSpellcasting(srd.special_abilities),
+    },
+    flavor: {
+      ...currentMonster.flavor,
+      summary: `${srd.name} imported from SRD data and ready for tuning in the studio.`,
+      habitat: currentMonster.flavor.habitat,
+      gmNotes: 'Review action economy, recharge cadence, and encounter role before finalizing this import.',
+      readAloud: currentMonster.flavor.readAloud,
+    },
+  };
+}
+
+function normalizeSrdEntry(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  return { ...entry, challenge_rating: normalizeCrKey(entry.challenge_rating ?? entry.cr ?? '1') };
+}
+
+function normalizeSrdSpeed(speed = {}) {
+  const readFeet = (value) => {
+    const match = String(value || '').match(/\d+/);
+    return match ? Number(match[0]) : 0;
+  };
+  return {
+    walk: readFeet(speed.walk),
+    climb: readFeet(speed.climb),
+    swim: readFeet(speed.swim),
+    burrow: readFeet(speed.burrow),
+    fly: readFeet(speed.fly),
+    hover: String(speed.fly || '').toLowerCase().includes('hover'),
+  };
+}
+
+function parseArmorClass(value) {
+  if (Array.isArray(value) && value.length) {
+    return Number(value[0]?.value) || Number(value[0]) || 10;
+  }
+  return Number(value) || 10;
+}
+
+function inferProficiencyBonusFromCr(cr) {
+  const n = crToNumber(normalizeCrKey(cr));
+  return Math.max(2, Math.min(9, 2 + Math.floor((n - 1) / 4)));
+}
+
+function inferPassivePerception(senses, wisdom = 10) {
+  const passive = Number(senses?.passive_perception);
+  if (passive) return passive;
+  return 10 + Math.floor(((Number(wisdom) || 10) - 10) / 2);
+}
+
+function formatSrdSenses(senses = {}) {
+  return Object.entries(senses)
+    .map(([key, value]) => `${key.replaceAll('_', ' ')} ${value}`.trim())
+    .join(', ');
+}
+
+function mapSrdFeatures(features = [], category = 'Trait') {
+  return arrayOrEmpty(features).map((feature) => ({
+    name: feature.name || category,
+    category,
+    description: feature.desc || '',
+    saveDc: '',
+    recharge: '',
+    usage: '',
+    trigger: '',
+  }));
+}
+
+function mapSrdActionsToAttacks(actions = []) {
+  return arrayOrEmpty(actions).slice(0, 4).map((action) => ({
+    name: action.name || 'Attack',
+    kind: inferActionKind(action.desc),
+    theme: 'srd',
+    toHit: parseToHitBonus(action.attack_bonus),
+    range: parseAttackRangeText(action.desc),
+    target: 'one target',
+    hit: action.desc || '',
+    damage: '',
+    damageType: '',
+    secondaryDamage: '',
+    save: '',
+    rider: '',
+    styleNote: 'Imported from SRD action text.',
+    recharge: '',
+    multiattackGroup: '',
+  }));
+}
+
+function mapSrdSpellcasting(features = []) {
+  return arrayOrEmpty(features)
+    .filter((feature) => String(feature.name || '').toLowerCase().includes('spellcasting'))
+    .map((feature) => ({ name: feature.name || 'Spellcasting', description: feature.desc || '' }));
+}
+
+function inferActionKind(desc = '') {
+  const lowered = String(desc).toLowerCase();
+  if (lowered.includes('ranged')) return 'Ranged Weapon Attack';
+  if (lowered.includes('melee spell attack')) return 'Melee Spell Attack';
+  if (lowered.includes('ranged spell attack')) return 'Ranged Spell Attack';
+  return 'Melee Weapon Attack';
+}
+
+function parseToHitBonus(value) {
+  const n = Number(value);
+  if (!Number.isNaN(n)) return `${n >= 0 ? '+' : ''}${n}`;
+  return '+0';
+}
+
+function parseAttackRangeText(desc = '') {
+  const reach = String(desc).match(/reach\s+\d+\s*ft\./i);
+  if (reach) return reach[0];
+  const range = String(desc).match(/range\s+\d+\s*\/\s*\d+\s*ft\./i);
+  if (range) return range[0].replace(/^range\s+/i, '');
+  return 'reach 5 ft.';
 }
 
 function importJson(event) {
