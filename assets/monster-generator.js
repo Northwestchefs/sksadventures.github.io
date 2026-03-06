@@ -26,6 +26,67 @@ const RANDOM_BY_CR = {
   '15': ['Star-Eater Chimera', 'Prince of Verdigris Chains', 'Cathedral Leviathan'],
 };
 
+
+
+const RANDOM_STYLES = {
+  balanced: 'Balanced',
+  horror: 'Horror',
+  elemental: 'Elemental',
+  aberrant: 'Aberrant',
+  celestial: 'Celestial',
+  swarm: 'Swarm',
+};
+
+const SIZE_OPTIONS = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'];
+const MONSTER_TYPES = ['aberration', 'beast', 'celestial', 'construct', 'dragon', 'elemental', 'fey', 'fiend', 'giant', 'humanoid', 'monstrosity', 'ooze', 'plant', 'undead'];
+const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned'];
+const ORIGINS = ['primal', 'arcane', 'divine', 'cursed', 'void', 'fey-touched', 'infernal', 'clockwork', 'stormbound', 'shadow'];
+const ENVIRONMENTS = ['arctic', 'coastal', 'desert', 'dungeon', 'forest', 'grassland', 'mountain', 'swamp', 'underdark', 'underwater', 'urban', 'volcanic', 'badlands', 'ruins', 'graveyard', 'planar'];
+const ROLES = ['brute', 'skirmisher', 'controller', 'artillery', 'support', 'defender', 'boss', 'ambusher'];
+const DAMAGE_TYPES = ['slashing', 'piercing', 'bludgeoning', 'fire', 'cold', 'lightning', 'thunder', 'acid', 'poison', 'necrotic', 'radiant', 'psychic', 'force'];
+const CONDITIONS = ['blinded', 'charmed', 'deafened', 'frightened', 'grappled', 'paralyzed', 'petrified', 'poisoned', 'prone', 'restrained', 'stunned'];
+const SENSE_OPTIONS = ['darkvision 60 ft.', 'darkvision 120 ft.', 'blindsight 10 ft.', 'blindsight 30 ft.', 'tremorsense 30 ft.', 'truesight 60 ft.'];
+const LANGUAGE_OPTIONS = ['Common', 'Draconic', 'Infernal', 'Abyssal', 'Celestial', 'Sylvan', 'Primordial', 'Deep Speech', 'Undercommon', 'telepathy 60 ft.'];
+
+const STYLE_PROFILES = {
+  balanced: {
+    names: ['Riftclaw Predator', 'Moonfen Howler', 'Runic Bastion', 'Ashcoil Ravager', 'Stonevein Brute', 'Glasswing Manticore'],
+    traits: ['Battle-hardened', 'Adaptive', 'Relentless'],
+    actions: ['Crushing Advance', 'Tactical Feint', 'Break Formation'],
+    flavor: ['Disciplined hunter', 'Ruin-forged enforcer', 'Territorial apex creature'],
+  },
+  horror: {
+    names: ['Whispering Ossuary', 'Gloam-Eyed Collector', 'Pale Mire Widow', 'Hollow Choir Horror', 'Dread Lantern Wretch'],
+    traits: ['Aura of Dread', 'Unnerving Presence', 'Body Horror'],
+    actions: ['Devouring Scream', 'Harvest Memory', 'Grave Pull'],
+    flavor: ['Feeds on fear', 'Stalks isolated prey', 'Turns battlefields into nightmares'],
+  },
+  elemental: {
+    names: ['Tempest-Core Myrmidon', 'Cinderwake Serpent', 'Tidelash Colossus', 'Shiverglass Golem', 'Thunderbrand Roc'],
+    traits: ['Elemental Flux', 'Living Storm', 'Fused Core'],
+    actions: ['Elemental Surge', 'Seismic Pulse', 'Flash Freeze'],
+    flavor: ['Raw elemental force given hunger', 'A conduit for planar weather', 'Unstable and catastrophic'],
+  },
+  aberrant: {
+    names: ['Nexuspore Seer', 'Violet Maw Savant', 'Mindrift Stalker', 'Orbit-Eye Devourer', 'Warpfold Anatomist'],
+    traits: ['Reality Distortion', 'Psionic Feedback', 'Impossible Anatomy'],
+    actions: ['Mind Lance', 'Spatial Twist', 'Neural Collapse'],
+    flavor: ['Alien intelligence with predatory curiosity', 'Warps local geometry', 'Hears thoughts as music'],
+  },
+  celestial: {
+    names: ['Dawnward Justicar', 'Star-Vigil Seraph', 'Mercybrand Exemplar', 'Sunshard Arbiter', 'Choirblade Guardian'],
+    traits: ['Radiant Ward', 'Beacon of Judgment', 'Blessed Aegis'],
+    actions: ['Solar Verdict', 'Purging Lance', 'Heavenly Rebuke'],
+    flavor: ['Serves an ancient vow', 'Punishes oathbreakers', 'Balances wrath and grace'],
+  },
+  swarm: {
+    names: ['Gnashcloud Swarm-Lord', 'Thousand-Fang Cluster', 'Skittermass Regent', 'Needlewing Brood', 'Carrion Bloom Hive'],
+    traits: ['Swarm Body', 'Overrun', 'Hive Mind'],
+    actions: ['Razor Flood', 'Brood Spill', 'Consume Supplies'],
+    flavor: ['Acts as one body', 'Devours terrain and morale', 'Grows stronger near corpses'],
+  },
+};
+
 const formEl = document.getElementById('monster-form');
 const statusEl = document.getElementById('studio-status');
 
@@ -118,6 +179,10 @@ function populateSelects() {
   const randomCr = document.getElementById('random-cr');
   randomCr.innerHTML = CR_OPTIONS.map((cr) => `<option value="${cr}">CR ${cr}</option>`).join('');
   randomCr.value = '5';
+
+  const randomStyle = document.getElementById('random-style');
+  randomStyle.innerHTML = Object.entries(RANDOM_STYLES).map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
+  randomStyle.value = 'balanced';
 }
 
 function renderForm() {
@@ -150,7 +215,16 @@ function renderIdentityFields() {
   const wrap = document.createElement('div');
   wrap.className = 'field-grid';
   const i = monster.identity;
-  wrap.innerHTML = textField('Name', 'identity.name', i.name) + textField('Subtitle', 'identity.subtitle', i.subtitle) + textField('Size', 'identity.size', i.size) + textField('Creature Type', 'identity.type', i.type) + textField('Subtype / Tags', 'identity.tags', i.tags) + textField('Alignment', 'identity.alignment', i.alignment) + textField('Environment', 'identity.environment', i.environment) + textField('Role', 'identity.role', i.role) + textField('CR Target', 'identity.cr', i.cr) + textField('Origin Tag', 'identity.origin', i.origin);
+  wrap.innerHTML = textField('Name', 'identity.name', i.name)
+    + textField('Subtitle', 'identity.subtitle', i.subtitle)
+    + selectField('Size', 'identity.size', i.size, SIZE_OPTIONS)
+    + selectField('Creature Type', 'identity.type', i.type, MONSTER_TYPES)
+    + textField('Subtype / Tags', 'identity.tags', i.tags)
+    + selectField('Alignment', 'identity.alignment', i.alignment, ALIGNMENTS)
+    + multiSelectField('Environment', 'identity.environment', i.environment, ENVIRONMENTS)
+    + selectField('Role', 'identity.role', i.role, ROLES)
+    + selectField('CR Target', 'identity.cr', i.cr, CR_OPTIONS)
+    + selectField('Origin Tag', 'identity.origin', i.origin, ORIGINS);
   return wrap;
 }
 
@@ -171,7 +245,7 @@ function renderCoreFields() {
 function renderDefenseFields() {
   const d = monster.defense;
   const wrap = document.createElement('div');
-  wrap.innerHTML = `<div class="field-grid">${textField('Saving Throw Proficiencies', 'defense.savingThrows', d.savingThrows.join(', '), 'comma-separated')}${textField('Skill Proficiencies', 'defense.skills', d.skills.join(', '), 'comma-separated')}${textField('Damage Vulnerabilities', 'defense.vulnerabilities', d.vulnerabilities.join(', '), 'comma-separated')}${textField('Damage Resistances', 'defense.resistances', d.resistances.join(', '), 'comma-separated')}${textField('Damage Immunities', 'defense.immunities', d.immunities.join(', '), 'comma-separated')}${textField('Condition Immunities', 'defense.conditionImmunities', d.conditionImmunities.join(', '), 'comma-separated')}${textField('Senses', 'defense.senses', d.senses)}${textField('Languages', 'defense.languages', d.languages)}${textField('Telepathy / Special Communication', 'defense.telepathy', d.telepathy)}</div>`;
+  wrap.innerHTML = `<div class="field-grid">${textField('Saving Throw Proficiencies', 'defense.savingThrows', d.savingThrows.join(', '), 'comma-separated')}${textField('Skill Proficiencies', 'defense.skills', d.skills.join(', '), 'comma-separated')}${multiSelectField('Damage Vulnerabilities', 'defense.vulnerabilities', d.vulnerabilities, DAMAGE_TYPES)}${multiSelectField('Damage Resistances', 'defense.resistances', d.resistances, DAMAGE_TYPES)}${multiSelectField('Damage Immunities', 'defense.immunities', d.immunities, DAMAGE_TYPES)}${multiSelectField('Condition Immunities', 'defense.conditionImmunities', d.conditionImmunities, CONDITIONS)}${multiSelectField('Senses', 'defense.senses', d.senses, SENSE_OPTIONS)}${multiSelectField('Languages', 'defense.languages', d.languages, LANGUAGE_OPTIONS)}${textField('Telepathy / Special Communication', 'defense.telepathy', d.telepathy)}</div>`;
   return wrap;
 }
 
@@ -232,7 +306,7 @@ function handleInputChange(event) {
   const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
   setByPath(monster, path, coerce(value));
 
-  if (path.startsWith('defense.') && typeof getByPath(monster, path) === 'string' && path !== 'defense.senses' && path !== 'defense.languages' && path !== 'defense.telepathy') {
+  if ((path.startsWith('defense.') || path === 'identity.environment') && typeof getByPath(monster, path) === 'string' && path !== 'defense.telepathy') {
     setByPath(monster, path, event.target.value.split(',').map((v) => v.trim()).filter(Boolean));
   }
 
@@ -337,20 +411,228 @@ function applyPreset() {
 
 function randomFromCr() {
   const cr = document.getElementById('random-cr').value;
-  const names = RANDOM_BY_CR[cr] || ['Wandering Revenant', 'Runebound Marauder', 'Thornmaw Beast'];
-  const picked = names[Math.floor(Math.random() * names.length)];
-  monster.identity.name = picked;
-  monster.identity.cr = cr;
-  monster.identity.role = ['brute', 'skirmisher', 'controller', 'boss'][Math.floor(Math.random() * 4)];
-  monster.combat.attacks[0] = {
-    ...monster.combat.attacks[0],
-    name: `${ATTACK_THEMES[Math.floor(Math.random() * ATTACK_THEMES.length)]} Strike`,
-    theme: ATTACK_THEMES[Math.floor(Math.random() * ATTACK_THEMES.length)],
-    damageType: ['slashing', 'piercing', 'bludgeoning', 'fire', 'cold', 'necrotic'][Math.floor(Math.random() * 6)],
+  const style = document.getElementById('random-style').value;
+  const generated = generateRandomMonster(cr, style);
+  monster = {
+    ...monster,
+    ...generated,
+    foundryHint: { ...monster.foundryHint, ...FOUNDATION_FLAGS.foundryHint },
   };
-  setStatus(`Random monster generated for CR ${cr}: ${picked}.`);
+  setStatus(`Random ${RANDOM_STYLES[style] || 'custom'} monster generated for CR ${cr}: ${generated.identity.name}.`);
   renderForm();
   renderPreview();
+}
+
+
+function generateRandomMonster(cr, styleKey) {
+  const profile = STYLE_PROFILES[styleKey] || STYLE_PROFILES.balanced;
+  const numericCr = crToNumber(cr);
+  const names = [...(RANDOM_BY_CR[cr] || []), ...profile.names];
+  const name = pick(names);
+  const size = weightedPick([
+    { value: 'Small', weight: 1 },
+    { value: 'Medium', weight: 4 },
+    { value: 'Large', weight: 3 },
+    { value: 'Huge', weight: numericCr >= 10 ? 2 : 1 },
+    { value: 'Gargantuan', weight: numericCr >= 15 ? 1 : 0 },
+  ]) || 'Medium';
+  const type = pick(MONSTER_TYPES);
+  const role = pick(ROLES);
+  const alignment = pick(ALIGNMENTS);
+  const origin = pick(ORIGINS);
+  const environmentList = pickMany(ENVIRONMENTS, randomInt(2, 4));
+  const tags = pickMany(['alpha', 'lurker', 'hunter', 'ritual', 'sentinel', 'siege', 'pack', 'arcane', 'mythic', 'venomous', 'frenzied'], 2).join(', ');
+
+  const proficiencyBonus = Math.max(2, Math.ceil((numericCr + 1) / 4) + 1);
+  const ac = randomInt(11 + Math.floor(numericCr / 2), 14 + Math.floor(numericCr / 2));
+  const hp = randomInt(18 + numericCr * 15, 38 + numericCr * 26);
+  const hitDiceCount = Math.max(3, Math.round(hp / 12));
+  const conMod = randomInt(1, Math.max(3, Math.floor(numericCr / 2) + 2));
+  const speed = {
+    walk: randomInt(25, 45),
+    climb: chance(0.35) ? randomInt(15, 35) : 0,
+    swim: chance(0.25) ? randomInt(20, 40) : 0,
+    burrow: chance(0.2) ? randomInt(10, 30) : 0,
+    fly: chance(0.35) ? randomInt(30, 70) : 0,
+    hover: chance(0.2),
+  };
+
+  const abilities = {
+    str: clamp(8 + randomInt(0, 10) + Math.floor(numericCr / 2), 3, 30),
+    dex: clamp(8 + randomInt(0, 10), 3, 30),
+    con: clamp(10 + randomInt(0, 10) + Math.floor(numericCr / 3), 3, 30),
+    int: clamp(4 + randomInt(0, 14), 1, 30),
+    wis: clamp(6 + randomInt(0, 12), 1, 30),
+    cha: clamp(5 + randomInt(0, 14), 1, 30),
+  };
+
+  const mainDamage = pick(DAMAGE_TYPES);
+  const attackTheme = pick(ATTACK_THEMES);
+  const avgDamage = randomInt(Math.max(4, Math.floor(4 + numericCr * 1.8)), Math.max(8, Math.floor(10 + numericCr * 2.7)));
+  const dice = damageDice(avgDamage, attackTheme);
+  const toHit = `+${Math.max(3, proficiencyBonus + Math.floor((abilities.str - 10) / 2))}`;
+  const saveDc = 10 + proficiencyBonus + Math.floor((abilities.wis - 10) / 2);
+
+  const roleFlavor = pick(profile.flavor);
+  const traitName = `${pick(profile.traits)} ${pick(['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol'])}`;
+  const actionName = `${pick(profile.actions)} ${pick(['Burst', 'Strike', 'Wave', 'Pulse', 'Assault'])}`;
+
+  return {
+    identity: {
+      ...monster.identity,
+      name,
+      subtitle: `${size} ${type}, ${alignment}`,
+      size,
+      type,
+      tags,
+      alignment,
+      environment: environmentList.join(', '),
+      role,
+      cr,
+      origin,
+    },
+    core: {
+      ...monster.core,
+      ac,
+      hp,
+      hitDice: `${hitDiceCount}d12 + ${hitDiceCount * conMod}`,
+      speed,
+      abilities,
+      proficiencyBonus,
+      initiativeBonus: Math.floor((abilities.dex - 10) / 2),
+      passivePerception: 10 + Math.floor((abilities.wis - 10) / 2) + (chance(0.5) ? proficiencyBonus : 0),
+    },
+    defense: {
+      ...monster.defense,
+      savingThrows: buildSavingThrows(abilities, proficiencyBonus),
+      skills: buildSkills(proficiencyBonus),
+      vulnerabilities: chance(0.25) ? [pick(DAMAGE_TYPES)] : [],
+      resistances: pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), randomInt(1, 3)),
+      immunities: chance(0.2) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), 1) : [],
+      conditionImmunities: chance(0.4) ? pickMany(CONDITIONS, randomInt(1, 2)) : [],
+      senses: pickMany(SENSE_OPTIONS, randomInt(1, 2)).join(', '),
+      languages: pickMany(LANGUAGE_OPTIONS, randomInt(1, 3)).join(', '),
+      telepathy: chance(0.35) ? `${randomInt(30, 120)} ft.` : '',
+    },
+    combat: {
+      ...monster.combat,
+      traits: [{ name: traitName, category: 'Trait', description: `${name} embodies a ${roleFlavor.toLowerCase()} approach to combat and gains advantage on one attack each turn against isolated foes.`, saveDc: '', recharge: '', usage: '', trigger: '' }],
+      actions: [{ name: actionName, category: 'Action', description: `Creatures in a 20-foot area must succeed on a DC ${saveDc} ${pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom'])} save or suffer a tactical setback and ${randomInt(5, 18)} (${damageDice(randomInt(5, 18), attackTheme)}) ${mainDamage} damage.`, saveDc: `${saveDc}`, recharge: chance(0.4) ? '5-6' : '', usage: '', trigger: '' }],
+      bonusActions: chance(0.6) ? [{ name: pick(['Predatory Shift', 'Arc Flash Step', 'Skitter Dash', 'Grim Reposition']), category: 'Bonus Action', description: `${name} moves up to half its speed without provoking opportunity attacks.`, saveDc: '', recharge: '', usage: '', trigger: '' }] : [],
+      reactions: chance(0.65) ? [{ name: pick(['Reactive Guard', 'Warp Riposte', 'Spiteful Counter']), category: 'Reaction', description: `When hit by an attack, ${name} reduces damage by ${randomInt(4, 12)} and can move 10 feet.`, saveDc: '', recharge: '', usage: chance(0.35) ? '3/day' : '', trigger: 'When hit by an attack' }] : [],
+      legendaryActions: numericCr >= 10 ? [{ name: pick(['Predator Pulse', 'Void Lash', 'Solar Flare Step']), category: 'Legendary', description: `${name} makes a quick strike or moves up to its speed.`, saveDc: '', recharge: '', usage: 'Costs 1 action', trigger: '' }] : [],
+      lairActions: numericCr >= 12 ? [{ name: pick(['Falling Cinders', 'Warping Ground', 'Howling Dark']), category: 'Lair', description: `On initiative count 20, the battlefield shifts and creatures make a DC ${saveDc} save or take ${randomInt(6, 16)} damage.`, saveDc: `${saveDc}`, recharge: '', usage: '', trigger: '' }] : [],
+      mythic: numericCr >= 17 && chance(0.55) ? [{ name: 'Mythic Resurgence', category: 'Mythic', description: `When reduced to 0 hit points, ${name} erupts with new power, regains ${Math.floor(hp / 2)} hit points, and unlocks additional effects.`, saveDc: '', recharge: '', usage: '1/day', trigger: 'When first reduced to 0 hit points' }] : [],
+      attacks: [{
+        name: `${titleCase(attackTheme)} Strike`,
+        kind: chance(0.25) ? 'Ranged Weapon Attack' : 'Melee Weapon Attack',
+        theme: attackTheme,
+        toHit,
+        range: chance(0.25) ? `${randomInt(30, 120)}/${randomInt(120, 320)} ft.` : `reach ${randomInt(5, 15)} ft.`,
+        target: chance(0.25) ? 'up to two targets' : 'one target',
+        hit: `${avgDamage} (${dice}) ${mainDamage} damage${chance(0.45) ? ` plus ${randomInt(4, 14)} (${damageDice(randomInt(4, 14), attackTheme)}) ${pick(DAMAGE_TYPES.filter((d) => d !== mainDamage))}` : ''}`,
+        damage: dice,
+        damageType: mainDamage,
+        secondaryDamage: chance(0.45) ? `${damageDice(randomInt(4, 14), attackTheme)} ${pick(DAMAGE_TYPES.filter((d) => d !== mainDamage))}` : '',
+        save: chance(0.3) ? `${saveDc} ${pick(['Str', 'Dex', 'Con', 'Wis'])}` : '',
+        rider: chance(0.5) ? pick(['Target is knocked prone.', 'Target cannot take reactions until start of its next turn.', 'Target speed is reduced by 10 ft. until end of its next turn.', 'Target cannot regain hit points until start of this creature\'s next turn.']) : '',
+        styleNote: `Generated with ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
+        recharge: chance(0.25) ? '5-6' : '',
+        multiattackGroup: chance(0.7) ? 'Multiattack' : '',
+      }],
+      spellcasting: chance(0.5) ? [{ name: pick(['Innate Spellcasting', 'Psionic Burstcasting', 'Ritual Invocation']), description: `Spell save DC ${saveDc}, +${proficiencyBonus + Math.max(2, Math.floor((abilities.int - 10) / 2))} to hit. At will: ${pickMany(['mage hand', 'minor illusion', 'ray of frost', 'thaumaturgy', 'chill touch'], 2).join(', ')}. 2/day each: ${pickMany(['fear', 'fly', 'fireball', 'lightning bolt', 'slow', 'hunger of hadar'], 2).join(', ')}.` }] : [],
+    },
+    flavor: {
+      ...monster.flavor,
+      summary: `${name} is a ${roleFlavor.toLowerCase()} ${type} engineered for CR ${cr} encounters.`,
+      appearance: pick(['Armor plates etched in runes.', 'A distorted silhouette with too many eyes.', 'Crystalline growths pulse with internal light.', 'Its body leaks elemental residue with every movement.']),
+      behavior: pick(['Tests defenses before committing.', 'Prioritizes isolated and wounded prey.', 'Retreats only to set an ambush.', 'Escalates quickly if bloodied.']),
+      tactics: pick(['Uses terrain to split the party.', 'Pressures spellcasters first.', 'Focuses one target until they drop.', 'Combines crowd control with burst damage.']),
+      habitat: `${name} is commonly found in ${environmentList.join(', ')} regions.`,
+      encounterIdeas: pick(['Guards a ritual site about to rupture.', 'Hunts anyone carrying an ancient sigil.', 'Appears as a hired weapon in a war camp.', 'Emerges after magical storms.']),
+      loot: pick(['A resonant core worth 500 gp.', 'A map to a hidden vault.', 'A weapon fragment that grants minor elemental power.', 'A charm that can summon lesser kin once.']),
+      gmNotes: `Increase pressure by adding environmental hazards that reflect the ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
+      readAloud: `A hush falls over the battlefield as ${name} steps forward, its presence bending the mood of the room before the first blow is struck.`,
+    },
+  };
+}
+
+function selectField(label, path, value, options) {
+  return `<label>${label}<select data-path="${path}">${options.map((option) => `<option value="${escape(option)}" ${String(option) === String(value) ? 'selected' : ''}>${option}</option>`).join('')}</select></label>`;
+}
+
+function multiSelectField(label, path, value, options) {
+  const selected = Array.isArray(value) ? value : String(value || '').split(',').map((v) => v.trim()).filter(Boolean);
+  const listValue = selected.join(', ');
+  const listId = `${path.replaceAll('.', '-')}-list`;
+  return `<label>${label}<input list="${listId}" data-path="${path}" value="${escape(listValue)}" placeholder="comma-separated"/></label><datalist id="${listId}">${options.map((option) => `<option value="${option}"></option>`).join('')}</datalist>`;
+}
+
+function pick(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function pickMany(list, count) {
+  const clone = [...list];
+  const picked = [];
+  while (clone.length && picked.length < count) {
+    const index = Math.floor(Math.random() * clone.length);
+    picked.push(clone.splice(index, 1)[0]);
+  }
+  return picked;
+}
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function chance(probability) {
+  return Math.random() < probability;
+}
+
+function weightedPick(entries) {
+  const valid = entries.filter((entry) => entry.weight > 0);
+  const total = valid.reduce((sum, entry) => sum + entry.weight, 0);
+  if (!total) return null;
+  let roll = Math.random() * total;
+  for (const entry of valid) {
+    roll -= entry.weight;
+    if (roll <= 0) return entry.value;
+  }
+  return valid[valid.length - 1].value;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function crToNumber(cr) {
+  if (cr.includes('/')) {
+    const [num, den] = cr.split('/').map(Number);
+    return num / den;
+  }
+  return Number(cr) || 0;
+}
+
+function damageDice(avg, theme) {
+  const die = ['dagger', 'claws'].includes(theme) ? 4 : ['spear', 'bow', 'crossbow'].includes(theme) ? 6 : ['great axe', 'tail', 'gore'].includes(theme) ? 10 : 8;
+  const count = Math.max(1, Math.round(avg / (die / 2 + 0.5)));
+  const bonus = Math.max(0, avg - Math.floor(count * (die + 1) / 2));
+  return `${count}d${die}${bonus ? `+${bonus}` : ''}`;
+}
+
+function buildSavingThrows(abilities, proficiencyBonus) {
+  const shortlist = pickMany(['str', 'dex', 'con', 'int', 'wis', 'cha'], 3);
+  return shortlist.map((ability) => `${ability.toUpperCase()} ${formatSigned(Math.floor((abilities[ability] - 10) / 2) + proficiencyBonus)}`);
+}
+
+function buildSkills(proficiencyBonus) {
+  const pool = ['Perception', 'Stealth', 'Athletics', 'Arcana', 'Intimidation', 'Survival', 'Insight', 'Deception'];
+  return pickMany(pool, 3).map((skill) => `${skill} ${formatSigned(randomInt(1, 5) + proficiencyBonus)}`);
+}
+
+function formatSigned(value) {
+  return `${value >= 0 ? '+' : ''}${value}`;
 }
 
 function saveLocal() {
