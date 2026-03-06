@@ -29,7 +29,7 @@ async function selectEncounterFile() {
 }
 
 function ensureEncounterShape(data) {
-  if (!data?.encounter || !Array.isArray(data?.monsters) || !data?.journal) {
+  if (!data?.encounter || !Array.isArray(data?.monsters) || (!data?.journal && !data?.journalEntry)) {
     throw new Error('Invalid file format. Expected sks-encounter.json export structure.');
   }
 }
@@ -78,6 +78,10 @@ function toList(items) {
 }
 
 function buildJournalHtml(payload) {
+  if (payload?.journalEntry?.pages?.[0]?.type === 'text' && payload?.journalEntry?.pages?.[0]?.text?.content) {
+    return payload.journalEntry.pages[0].text.content;
+  }
+
   return `
     <h1>${payload.encounter.name}</h1>
     <p><strong>Difficulty:</strong> ${String(payload.encounter.difficulty || '').toUpperCase()}</p>
@@ -185,18 +189,20 @@ function buildJournalHtml(payload) {
   }
 
   await JournalEntry.create({
-    name: `${payload.encounter.name} - Encounter Brief`,
+    name: payload?.journalEntry?.name || `${payload.encounter.name} - Encounter Brief`,
     folder: journalFolder.id,
-    pages: [
-      {
-        name: 'Encounter Brief',
-        type: 'text',
-        text: {
-          format: 1,
-          content: buildJournalHtml(payload)
-        }
-      }
-    ]
+    pages: payload?.journalEntry?.pages?.length
+      ? payload.journalEntry.pages
+      : [
+          {
+            name: 'Encounter Brief',
+            type: 'text',
+            text: {
+              format: 1,
+              content: buildJournalHtml(payload)
+            }
+          }
+        ]
   });
 
   ui.notifications.info('SKS encounter imported: actors, scene tokens, combatants, initiative, and journal entry are ready.');
