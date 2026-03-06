@@ -472,6 +472,180 @@
       .replace(/'/g, '&#39;');
   }
 
+  function normalizeTag(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function toSentence(value) {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) return '';
+    const base = trimmed.replace(/[\s.]+$/, '');
+    return `${base.charAt(0).toUpperCase()}${base.slice(1)}.`;
+  }
+
+  function getDifficultyTone(difficulty) {
+    const value = normalizeTag(difficulty);
+    if (value === 'easy' || value === 'trivial') return 'a probing skirmish';
+    if (value === 'hard') return 'a punishing battle';
+    if (value === 'deadly') return 'a potentially lethal clash';
+    return 'a dangerous confrontation';
+  }
+
+  function getEnvironmentFlavor(environment) {
+    const value = normalizeTag(environment);
+    const byEnvironment = {
+      underdark: {
+        purpose: 'This encounter should create claustrophobic pressure, forcing the party to make careful movement and visibility decisions under constant threat.',
+        readAloud: 'Cold damp stone closes in from every side. Dim fungal light paints the tunnel walls in sickly color while each footstep echoes farther than it should. Narrow ledges trace the edge of black drops, and somewhere ahead, unseen movement scrapes against the rock.',
+        danger: 'Sightlines are limited, footing is uncertain, and hidden angles let enemies pressure the party before everyone can commit safely.'
+      },
+      arctic: {
+        purpose: 'This encounter should test positioning and endurance while the environment punishes overextension.',
+        readAloud: 'A cutting wind drives needles of snow across the ground, blurring distance and swallowing sound. Ice cracks under shifting weight, and every exposed moment feels like it costs warmth and time.',
+        danger: 'Open lanes become kill zones quickly, while wind, cold, and brittle terrain punish slow reactions.'
+      },
+      swamp: {
+        purpose: 'This encounter should reward deliberate movement and punish parties that treat the battlefield as stable ground.',
+        readAloud: 'Stagnant water shivers around half-sunken roots. Rot and wet earth cling to the air while insects swarm in clouds over dark pools. Each step threatens to sink, slide, or vanish beneath murky surface water.',
+        danger: 'Visibility is broken, movement is unreliable, and creatures familiar with the mire can strike from angles the party cannot hold for long.'
+      },
+      forest: {
+        purpose: 'This encounter should feel dynamic and uncertain, with cover, obstructions, and shifting sightlines shaping every turn.',
+        readAloud: 'Root-snared paths wind between heavy trunks as shadows shift with every gust. Birds burst from the canopy without warning, and brush stirs where nothing should be moving.',
+        danger: 'Dense terrain splits the party, blocks clean lines of attack, and gives fast or hidden enemies space to reposition.'
+      }
+    };
+
+    return byEnvironment[value] || {
+      purpose: 'This encounter should challenge party coordination and make battlefield control matter from the opening exchange.',
+      readAloud: 'The ground ahead feels wrong in a way every veteran recognizes. Sound carries strangely, sightlines break without warning, and hostile movement waits just beyond a clear view.',
+      danger: 'Uncertain terrain and disrupted visibility make isolated characters vulnerable to focused pressure.'
+    };
+  }
+
+  function getMonsterTactics(monsters) {
+    const tactics = [];
+    const reminders = [];
+
+    const addTactic = (key, text) => {
+      if (!tactics.some((item) => item.key === key)) tactics.push({ key, text });
+    };
+    const addReminder = (key, text) => {
+      if (!reminders.some((item) => item.key === key)) reminders.push({ key, text });
+    };
+
+    monsters.forEach((monster) => {
+      const name = normalizeTag(monster.name);
+      if (name.includes('basilisk')) {
+        addTactic('basilisk-space', 'Basilisks dominate space through petrifying gaze pressure, forcing front-liners to choose between aggression and safety.');
+        addTactic('basilisk-punish', 'They punish reckless approaches by threatening any target that cannot safely manage line of sight.');
+        addReminder('basilisk', 'Track who is averting their gaze and describe line-of-sight choices clearly.');
+      }
+      if (name.includes('air elemental')) {
+        addTactic('air-mobility', 'Air elementals use superior mobility to sweep through the line and isolate weaker targets.');
+        addTactic('air-exposed', 'They pressure exposed ranged characters and punish anyone holding open positions without support.');
+        addReminder('air-elemental', 'Keep them moving; static elementals lose their main advantage.');
+      }
+      if (name.includes('troll')) {
+        addTactic('troll-pressure', 'Trolls apply relentless melee pressure, staying aggressive even after heavy damage.');
+        addTactic('troll-regen', 'Regeneration turns attrition in their favor unless the party commits to the right damage types.');
+        addReminder('troll', 'Signal regeneration at the table so players know control and damage type matter.');
+      }
+      if (name.includes('goblin')) {
+        addTactic('goblin-ambush', 'Goblins favor ambush angles, harassment, and short repositioning bursts over direct commitment.');
+        addTactic('goblin-break', 'If momentum breaks against them, surviving goblins look for escape routes rather than a last stand.');
+        addReminder('goblin', 'Use cover and bonus movement to keep pressure annoying rather than lethal.');
+      }
+    });
+
+    if (!tactics.length && monsters.length) {
+      const highCount = monsters.reduce((sum, monster) => sum + (Number(monster.count) || 0), 0) >= 5;
+      const highCr = monsters.some((monster) => Number(monster.cr) >= 8);
+      tactics.push({
+        key: 'general-focus',
+        text: highCount
+          ? 'This force wins by concentrating attacks, controlling movement lanes, and overwhelming isolated targets.'
+          : 'These creatures favor focused pressure, forcing the party to answer one immediate threat at a time.'
+      });
+      if (highCr) {
+        tactics.push({
+          key: 'general-elite',
+          text: 'High-threat creatures should challenge the party center directly while lesser allies exploit openings.'
+        });
+      }
+      reminders.push({ key: 'general', text: 'Identify the most vulnerable party member early and press that angle until the party adapts.' });
+    }
+
+    return {
+      behaviorHtml: tactics.length
+        ? `<ul>${tactics.map((item) => `<li>${escapeHtml(item.text)}</li>`).join('')}</ul>`
+        : '<p>No creature tactics were available.</p>',
+      remindersHtml: reminders.length
+        ? `<ul>${reminders.map((item) => `<li>${escapeHtml(item.text)}</li>`).join('')}</ul>`
+        : '<ul><li>Keep pressure consistent and make enemy priorities visible through narration.</li></ul>'
+    };
+  }
+
+  function formatMonsterTable(monsters) {
+    const rows = monsters.length
+      ? monsters.map((monster) => `
+<tr>
+  <td>${escapeHtml(monster.name)}</td>
+  <td>${escapeHtml(monster.count ?? '1')}</td>
+  <td>${escapeHtml(monster.cr ?? '—')}</td>
+  <td>${escapeHtml(monster.ac ?? '—')}</td>
+  <td>${escapeHtml(monster.hp ?? '—')}</td>
+  <td>${escapeHtml(monster.init ?? '—')}</td>
+  <td>${escapeHtml(monster.xp ?? '—')}</td>
+</tr>`).join('')
+      : '<tr><td>None listed</td><td>0</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
+
+    return `
+<table>
+  <tr>
+    <th>Creature</th>
+    <th>Count</th>
+    <th>CR</th>
+    <th>AC</th>
+    <th>HP</th>
+    <th>Initiative</th>
+    <th>XP Each</th>
+  </tr>${rows}
+</table>
+`.trim();
+  }
+
+  function formatHazards(hazards, environment) {
+    if (!Array.isArray(hazards) || !hazards.length) {
+      return `<ul><li>${escapeHtml(`Use ${environment || 'the environment'} to pressure movement, cover, and visibility without adding new mechanics.`)}</li></ul>`;
+    }
+
+    const items = hazards.map((hazard) => {
+      const sentence = toSentence(hazard);
+      const guidance = sentence || 'Terrain complications should change how creatures move and commit.';
+      return `<li>${escapeHtml(guidance)}</li>`;
+    }).join('');
+
+    return `<ul>${items}</ul>`;
+  }
+
+  function formatRewardsAndHooks(journal) {
+    const treasureItems = Array.isArray(journal?.treasure) ? journal.treasure : [];
+    const hooks = Array.isArray(journal?.narrativeHooks) ? journal.narrativeHooks : [];
+    const aftermathSeedPool = [...hooks, ...treasureItems].filter(Boolean);
+    const seeds = aftermathSeedPool.slice(0, 4);
+
+    const treasureHtml = treasureItems.length
+      ? `<ul style="padding-left:18px;">${treasureItems.map((item) => `<li>${escapeHtml(toSentence(item) || item)}</li>`).join('')}</ul>`
+      : '<ul style="padding-left:18px;"><li>No fixed treasure noted; reward discoveries tied to encounter context.</li></ul>';
+
+    const aftermathHtml = seeds.length
+      ? `<ul>${seeds.map((seed) => `<li>${escapeHtml(toSentence(seed) || seed)}</li>`).join('')}</ul>`
+      : '<ul><li>Survivors, evidence, or territorial signs can point toward the next active threat.</li><li>A hidden route or clue can connect this site to a broader faction conflict.</li></ul>';
+
+    return { treasureHtml, aftermathHtml };
+  }
+
   function convertEncounterToFoundryJournal(payload) {
     if (!payload || !payload.encounter) {
       return null;
@@ -483,94 +657,104 @@
     const partyLevel = payload.encounter.partyLevel ?? 'Unknown';
     const partySize = payload.encounter.partySize ?? 'Unknown';
     const monsters = Array.isArray(payload.monsters) ? payload.monsters : [];
+    const adjustedXp = payload.encounter.adjustedXp;
+    const rawXp = payload.encounter.rawXp;
+    const flavor = getEnvironmentFlavor(environment);
+    const tactics = getMonsterTactics(monsters);
+    const rewards = formatRewardsAndHooks(payload.journal || {});
+    const hazardHtml = formatHazards(payload.journal?.environmentHazards, environment);
+
+    const encounterSummaryDetails = [
+      `<strong>Environment:</strong> ${escapeHtml(environment)}`,
+      `<strong>Difficulty:</strong> ${escapeHtml(difficulty)}`,
+      `<strong>Party Level:</strong> ${escapeHtml(partyLevel)}`,
+      `<strong>Party Size:</strong> ${escapeHtml(partySize)}`,
+      adjustedXp != null ? `<strong>Adjusted XP:</strong> ${escapeHtml(adjustedXp)}` : '',
+      rawXp != null ? `<strong>Raw XP:</strong> ${escapeHtml(rawXp)}` : ''
+    ].filter(Boolean).map((line) => `<div>${line}</div>`).join('');
 
     const overviewHtml = `
-<div style="border:2px solid #444;padding:12px;border-radius:8px;background:#1e1e1e;color:#ddd;">
-  <h1>Encounter: ${escapeHtml(encounterName)}</h1>
-  <p><strong>Environment:</strong> ${escapeHtml(environment)}</p>
-  <p><strong>Difficulty:</strong> ${escapeHtml(difficulty)}</p>
-  <p><strong>Party Level:</strong> ${escapeHtml(partyLevel)}</p>
-  <p><strong>Party Size:</strong> ${escapeHtml(partySize)}</p>
+<div style="border:1px solid #5a4a34;padding:14px;border-radius:10px;background:linear-gradient(180deg,#1a1a1a,#121212);color:#d9d2c3;box-shadow:0 0 0 1px #24201a inset;">
+  <h1 style="margin:0 0 8px 0;color:#e8ddc9;">${escapeHtml(encounterName)}</h1>
+  ${encounterSummaryDetails}
 </div>
 <hr>
-<h2>Read Aloud</h2>
+<h2>Scene Purpose</h2>
+<p>${escapeHtml(`${flavor.purpose} This should play as ${getDifficultyTone(difficulty)} for a level ${partyLevel} party of ${partySize}.`)}</p>
+<hr>
+<h2>📜 Read Aloud</h2>
 <blockquote>
-  <p>${escapeHtml(`The wind cuts across the ${environment} terrain as movement forms in the distance. This force appears ready to challenge a party of ${partySize} adventurers at level ${partyLevel} with ${difficulty.toUpperCase()} intensity.`)}</p>
+  <p>${escapeHtml(flavor.readAloud)}</p>
 </blockquote>
+<hr>
+<h2>What Makes This Dangerous</h2>
+<p>${escapeHtml(flavor.danger)}</p>
 `.trim();
-
-    const creaturesList = monsters.length
-      ? monsters.map((monster) => `<li><strong>${escapeHtml(monster.name)} ×${escapeHtml(monster.count)}</strong> — CR ${escapeHtml(monster.cr)}</li>`).join('')
-      : '<li><strong>None listed</strong> — CR 0</li>';
-
-    const monsterTableRows = monsters.length
-      ? monsters.map((monster) => `
-<tr>
-  <td>${escapeHtml(monster.name)}</td>
-  <td>${escapeHtml(monster.ac ?? '—')}</td>
-  <td>${escapeHtml(monster.hp ?? '—')}</td>
-  <td>${escapeHtml(monster.init ?? '—')}</td>
-</tr>`).join('')
-      : `
-<tr>
-  <td>None listed</td>
-  <td>—</td>
-  <td>—</td>
-  <td>—</td>
-</tr>`;
 
     const monstersHtml = `
-<h2>Creatures</h2>
-<ul>${creaturesList}</ul>
+<h2>⚔ Encounter Roster</h2>
+${formatMonsterTable(monsters)}
 <hr>
-<h3>Quick Stat Reference</h3>
-<table>
-  <tr>
-    <th>Monster</th>
-    <th>AC</th>
-    <th>HP</th>
-    <th>Initiative</th>
-  </tr>${monsterTableRows}
-</table>
+<h2>Behavior and Tactics</h2>
+${tactics.behaviorHtml}
+<h3>Quick DM Reminder</h3>
+${tactics.remindersHtml}
 `.trim();
-
-    const hazardItems = Array.isArray(payload.journal?.environmentHazards) && payload.journal.environmentHazards.length
-      ? payload.journal.environmentHazards.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
-      : '<li>Terrain pressure is minimal; use movement and line-of-sight to create tactical tension.</li>';
 
     const runningHtml = `
-<h2>Encounter Tactics</h2>
-<p>${escapeHtml(payload.journal?.bossBehavior || 'The creatures coordinate to apply pressure, isolate vulnerable targets, and force movement through dangerous terrain.')}</p>
+<h2>Battlefield Flow</h2>
+<ul>
+  <li>${escapeHtml(`Opening: ${monsters.length ? 'the roster pushes for early positional advantage using its strongest pressure points.' : 'hostile movement tests the party front before committing.'}`)}</li>
+  <li>${escapeHtml('Rounds 1–2: once the first exchanges land, enemies shift to isolate vulnerable targets and deny easy recovery turns.')}</li>
+  <li>${escapeHtml('Terrain impact: cover, chokepoints, and movement penalties should matter every round, not just at initiative start.')}</li>
+</ul>
 <hr>
-<h3>Environmental Hazards</h3>
-<ul>${hazardItems}</ul>
+<h2>🌍 Environmental Pressure</h2>
+${hazardHtml}
+<hr>
+<h2>Escalation Options</h2>
+<ul>
+  <li>${escapeHtml('If the party dominates early, introduce reinforcement pressure from nearby movement or noise response.')}</li>
+  <li>${escapeHtml('Shift terrain posture: collapsing footing, worsening visibility, or changing lanes can force a mid-fight reposition.')}</li>
+  <li>${escapeHtml('Add a situational complication tied to this environment without introducing unsupported new mechanics.')}</li>
+</ul>
 `.trim();
-
-    const treasureItems = Array.isArray(payload.journal?.treasure) && payload.journal.treasure.length
-      ? payload.journal.treasure.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
-      : '<li>2d4 gemstones worth 25 gp each</li>';
 
     const treasureHtml = `
-<h2>Treasure</h2>
-<p><strong>Reward Overview:</strong> Distribute rewards to reflect encounter difficulty and reinforce your campaign tone.</p>
-<ul>${treasureItems}</ul>
+<h2>💰 Treasure</h2>
+<div style="border:1px solid #3d3326;padding:10px;border-radius:8px;background:#171512;color:#d8cfbe;">
+  ${rewards.treasureHtml}
+</div>
+<hr>
+<h2>After the Battle</h2>
+${rewards.aftermathHtml}
 `.trim();
 
-    const gmNotes = [];
-    if (Array.isArray(payload.journal?.narrativeHooks)) {
-      gmNotes.push(...payload.journal.narrativeHooks);
+    const hiddenContext = Array.isArray(payload.journal?.narrativeHooks) ? payload.journal.narrativeHooks : [];
+    const complications = [
+      ...(Array.isArray(payload.journal?.bossPhases) ? payload.journal.bossPhases : []),
+      ...(Array.isArray(payload.journal?.lairActions) ? payload.journal.lairActions : [])
+    ];
+    const hiddenTruths = Array.isArray(payload.journal?.environmentHazards) ? payload.journal.environmentHazards : [];
+
+    const gmSections = [];
+    if (hiddenContext.length) {
+      gmSections.push(`<h3>Hidden Context</h3><ul>${hiddenContext.map((note) => `<li>${escapeHtml(toSentence(note) || note)}</li>`).join('')}</ul>`);
     }
-    if (Array.isArray(payload.journal?.bossPhases)) {
-      gmNotes.push(...payload.journal.bossPhases);
+    if (complications.length) {
+      gmSections.push(`<h3>Complications</h3><ul>${complications.map((note) => `<li>${escapeHtml(toSentence(note) || note)}</li>`).join('')}</ul>`);
     }
-    if (Array.isArray(payload.journal?.lairActions)) {
-      gmNotes.push(...payload.journal.lairActions);
+    if (hiddenTruths.length || payload.journal?.bossBehavior) {
+      const escalationItems = [];
+      if (payload.journal?.bossBehavior) escalationItems.push(payload.journal.bossBehavior);
+      escalationItems.push(...hiddenTruths);
+      gmSections.push(`<h3>Escalation</h3><ul>${escalationItems.map((note) => `<li>${escapeHtml(toSentence(note) || note)}</li>`).join('')}</ul>`);
     }
 
     const gmNotesHtml = `
 <section class="secret">
-  <h3>GM Notes</h3>
-  <ul>${(gmNotes.length ? gmNotes : ['This encounter is intended to drain spell resources.', 'Consider escalating difficulty if the party dominates quickly.']).map((note) => `<li>${escapeHtml(note)}</li>`).join('')}</ul>
+  <h2>🧠 GM Secrets</h2>
+  ${gmSections.length ? gmSections.join('<hr>') : '<p>No additional secret notes were generated for this encounter.</p>'}
 </section>
 `.trim();
 
@@ -579,8 +763,8 @@
       pages: [
         { name: 'Overview', type: 'text', text: { format: 1, content: overviewHtml } },
         { name: 'Monsters', type: 'text', text: { format: 1, content: monstersHtml } },
-        { name: 'Running the Encounter', type: 'text', text: { format: 1, content: runningHtml } },
-        { name: 'Treasure', type: 'text', text: { format: 1, content: treasureHtml } },
+        { name: 'Running the Fight', type: 'text', text: { format: 1, content: runningHtml } },
+        { name: 'Rewards and Aftermath', type: 'text', text: { format: 1, content: treasureHtml } },
         { name: 'GM Notes', type: 'text', text: { format: 1, content: gmNotesHtml } }
       ],
       ownership: {
