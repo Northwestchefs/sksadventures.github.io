@@ -485,15 +485,17 @@
     const monsters = Array.isArray(payload.monsters) ? payload.monsters : [];
 
     const overviewHtml = `
-<h1>${escapeHtml(encounterName)}</h1>
-<h2>Encounter Overview</h2>
-<p><strong>Environment:</strong> ${escapeHtml(environment)}</p>
-<p><strong>Difficulty:</strong> ${escapeHtml(difficulty)}</p>
-<p><strong>Party Level:</strong> ${escapeHtml(partyLevel)}</p>
-<p><strong>Party Size:</strong> ${escapeHtml(partySize)}</p>
+<div style="border:2px solid #444;padding:12px;border-radius:8px;background:#1e1e1e;color:#ddd;">
+  <h1>Encounter: ${escapeHtml(encounterName)}</h1>
+  <p><strong>Environment:</strong> ${escapeHtml(environment)}</p>
+  <p><strong>Difficulty:</strong> ${escapeHtml(difficulty)}</p>
+  <p><strong>Party Level:</strong> ${escapeHtml(partyLevel)}</p>
+  <p><strong>Party Size:</strong> ${escapeHtml(partySize)}</p>
+</div>
+<hr>
 <h2>Read Aloud</h2>
 <blockquote>
-  <p>${escapeHtml(`The air grows tense as the party enters this ${environment} battleground. Foes move with purpose, testing a level ${partyLevel} group of ${partySize} adventurers against a ${difficulty.toUpperCase()} challenge.`)}</p>
+  <p>${escapeHtml(`The wind cuts across the ${environment} terrain as movement forms in the distance. This force appears ready to challenge a party of ${partySize} adventurers at level ${partyLevel} with ${difficulty.toUpperCase()} intensity.`)}</p>
 </blockquote>
 `.trim();
 
@@ -501,11 +503,35 @@
       ? monsters.map((monster) => `<li><strong>${escapeHtml(monster.name)} ×${escapeHtml(monster.count)}</strong> — CR ${escapeHtml(monster.cr)}</li>`).join('')
       : '<li><strong>None listed</strong> — CR 0</li>';
 
+    const monsterTableRows = monsters.length
+      ? monsters.map((monster) => `
+<tr>
+  <td>${escapeHtml(monster.name)}</td>
+  <td>${escapeHtml(monster.ac ?? '—')}</td>
+  <td>${escapeHtml(monster.hp ?? '—')}</td>
+  <td>${escapeHtml(monster.init ?? '—')}</td>
+</tr>`).join('')
+      : `
+<tr>
+  <td>None listed</td>
+  <td>—</td>
+  <td>—</td>
+  <td>—</td>
+</tr>`;
+
     const monstersHtml = `
 <h2>Creatures</h2>
 <ul>${creaturesList}</ul>
-<h2>Tactics</h2>
-<p>${escapeHtml(payload.journal?.bossBehavior || 'The opposition focuses on battlefield pressure, attempting to split the party and threaten isolated targets first.')}</p>
+<hr>
+<h3>Quick Stat Reference</h3>
+<table>
+  <tr>
+    <th>Monster</th>
+    <th>AC</th>
+    <th>HP</th>
+    <th>Initiative</th>
+  </tr>${monsterTableRows}
+</table>
 `.trim();
 
     const hazardItems = Array.isArray(payload.journal?.environmentHazards) && payload.journal.environmentHazards.length
@@ -513,10 +539,11 @@
       : '<li>Terrain pressure is minimal; use movement and line-of-sight to create tactical tension.</li>';
 
     const runningHtml = `
-<h2>Environmental Hazards</h2>
+<h2>Encounter Tactics</h2>
+<p>${escapeHtml(payload.journal?.bossBehavior || 'The creatures coordinate to apply pressure, isolate vulnerable targets, and force movement through dangerous terrain.')}</p>
+<hr>
+<h3>Environmental Hazards</h3>
 <ul>${hazardItems}</ul>
-<h2>Combat Notes</h2>
-<p>Use initiative pacing to spotlight enemy roles, reinforce the environment theme, and maintain pressure consistent with a ${escapeHtml(difficulty)} encounter.</p>
 `.trim();
 
     const treasureItems = Array.isArray(payload.journal?.treasure) && payload.journal.treasure.length
@@ -525,6 +552,7 @@
 
     const treasureHtml = `
 <h2>Treasure</h2>
+<p><strong>Reward Overview:</strong> Distribute rewards to reflect encounter difficulty and reinforce your campaign tone.</p>
 <ul>${treasureItems}</ul>
 `.trim();
 
