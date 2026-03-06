@@ -578,6 +578,64 @@
     return dedupeList(reminders).slice(0, 5);
   }
 
+  function describeMonsterRole(monsterName, environment) {
+    const name = normalizeTag(monsterName);
+    const env = normalizeTag(environment);
+
+    if (name.includes('goblin')) return 'Skirmisher ambusher using cover and dirty disengages.';
+    if (name.includes('orc')) return 'Shock infantry built to collapse one defensive lane at a time.';
+    if (name.includes('skeleton')) return 'Undead line-holder that trades mobility for relentless pressure.';
+    if (name.includes('zombie')) return 'Slow attrition brute that absorbs actions and pins chokepoints.';
+    if (name.includes('gelatinous cube')) return 'Corridor denial hazard that turns movement mistakes into captures.';
+    if (name.includes('basilisk')) return 'Zone controller threatening petrification through gaze exposure.';
+    if (name.includes('air elemental')) return 'Mobile disrupter that isolates vulnerable targets.';
+    if (name.includes('troll')) return 'Regenerating brawler that forces focused finishing damage.';
+    if (name.includes('mind flayer')) return 'Controller specialist that combines positioning and psychic lockdown.';
+    if (name.includes('dragon')) return 'Apex predator with burst turns and fear-driven battlefield control.';
+
+    if (env === 'swamp') return 'Terrain opportunist using murk and difficult ground for tempo advantage.';
+    if (env === 'arctic') return 'Cold-weather hunter that punishes overextension in exposed lanes.';
+    return 'Pressures weak points and exploits any split in party formation.';
+  }
+
+  function buildSignatureActions(monster, environment, difficulty) {
+    const count = Math.max(1, Number(monster?.count) || 1);
+    const cr = Number(monster?.cr) || 0;
+    const name = String(monster?.name || 'Creature');
+    const safeName = escapeHtml(name);
+    const accuracyBonus = 3 + Math.max(0, Math.floor(cr / 2));
+    const saveDc = 11 + Math.max(0, Math.floor(cr / 2));
+    const threatScale = difficulty === 'deadly' ? 1.2 : difficulty === 'hard' ? 1.1 : 1;
+    const averageDamage = Math.max(4, Math.round((6 + cr * 2.5) * threatScale));
+    const swingDamage = Math.max(averageDamage + 3, Math.round((8 + cr * 3.2) * threatScale));
+
+    const environmentalFeat = {
+      forest: 'Can bonus action Hide when lightly obscured by brush, roots, or canopy shadow.',
+      swamp: 'Can move through nonmagical difficult terrain caused by mud or roots without extra movement cost.',
+      dungeon: 'Has advantage on checks to detect intruders within 30 ft. of doors, halls, and intersections.',
+      underdark: 'Ignores penalties from dim light and bioluminescent haze when making Perception checks.',
+      urban: 'Can Dash as a bonus action while within 10 ft. of walls, carts, doors, or market clutter.',
+      arctic: 'Reduces cold-weather travel penalties and ignores slippery ice penalties once per round.',
+      any: 'Gains +2 to initiative while defending prepared ground.'
+    };
+
+    const featLine = environmentalFeat[normalizeTag(environment)] || environmentalFeat.any;
+
+    const primaryAttack = `+${accuracyBonus} to hit; reach 5 ft. or range 30/120 ft.; one target. Hit: ${averageDamage} damage (adapt type to creature).`;
+    const pressureAttack = `Recharge 5-6 or bloodied trigger: forces a DC ${saveDc} save or suffers ${Math.max(2, Math.floor(averageDamage / 2))} damage plus repositioning pressure.`;
+    const commanderCallout = count > 1
+      ? `Pack Coordination: while at least one ally of ${safeName} is adjacent to the target, add +${Math.min(4, 1 + Math.floor(count / 2))} damage once per turn.`
+      : 'Solo Focus: when first bloodied, immediately repositions up to half speed without provoking opportunity attacks.';
+
+    return {
+      role: describeMonsterRole(name, environment),
+      attackOne: primaryAttack,
+      attackTwo: `${swingDamage >= 10 ? 'Heavy' : 'Swift'} Follow-Up: ${pressureAttack}`,
+      feat: featLine,
+      beat: commanderCallout
+    };
+  }
+
   function formatMonsterTable(monsters) {
     const rows = monsters.length
       ? monsters.map((monster) => `
@@ -752,6 +810,21 @@
 </tr>`).join('')
       : '<tr><td>None listed</td><td>0</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>';
 
+    const attackProfiles = monsters.map((monster) => {
+      const profile = buildSignatureActions(monster, environment, difficulty);
+      return `
+<article style="border:1px solid #3a3024;border-radius:8px;padding:10px;margin-bottom:10px;background:#161411;color:#dbcfb9;">
+  <h3 style="margin:0 0 6px 0;">${escapeHtml(monster.name || 'Unknown Creature')} — Signature Kit</h3>
+  <p style="margin:0 0 6px 0;"><strong>Combat Role:</strong> ${escapeHtml(profile.role)}</p>
+  <ul style="margin:0 0 6px 0;padding-left:18px;">
+    <li><strong>Signature Attack:</strong> ${escapeHtml(profile.attackOne)}</li>
+    <li><strong>Pressure Move:</strong> ${escapeHtml(profile.attackTwo)}</li>
+    <li><strong>Creative Feat:</strong> ${escapeHtml(profile.feat)}</li>
+    <li><strong>Tactical Beat:</strong> ${escapeHtml(profile.beat)}</li>
+  </ul>
+</article>`;
+    }).join('');
+
     const monstersHtml = `
 <h2>⚔ Encounter Roster</h2>
 <table>
@@ -775,6 +848,9 @@
 <ul>
   ${reminders.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}
 </ul>
+<hr>
+<h2>Signature Attacks & Creative Feats</h2>
+${attackProfiles || `<p>${escapeHtml('No monster signatures were generated for this roster.')}</p>`}
 `.trim();
 
     const runningHtml = `
