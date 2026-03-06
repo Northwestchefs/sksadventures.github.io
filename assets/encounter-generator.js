@@ -397,6 +397,33 @@
       };
     });
 
+    const journal = {
+      treasure: hooks?.treasureIdeas || [],
+      narrativeHooks: hooks?.narrativeIdeas || [],
+      bossBehavior: hooks ? `${hooks.bossChassis} ${hooks.bossBehavior}` : '',
+      bossPhases: hooks ? [hooks.bossPhaseTwo, hooks.bossPhaseThree].filter(Boolean) : [],
+      lairActions: hooks?.lairActions || [],
+      environmentHazards: hooks ? [hooks.hazard, hooks.objective, hooks.twist].filter(Boolean) : []
+    };
+
+    const journalHtml = `
+<h1>Encounter Brief</h1>
+<p><strong>Difficulty:</strong> ${String(lastGenerated.context.difficulty || '').toUpperCase()}</p>
+<p><strong>Environment:</strong> ${lastGenerated.context.environment || 'any'}</p>
+<h2>Treasure Ideas</h2>
+<ul>${journal.treasure.map((item) => `<li>${item}</li>`).join('') || '<li>None provided.</li>'}</ul>
+<h2>Narrative Hooks</h2>
+<ul>${journal.narrativeHooks.map((item) => `<li>${item}</li>`).join('') || '<li>None provided.</li>'}</ul>
+<h2>Boss Behavior</h2>
+<p>${journal.bossBehavior || 'None provided.'}</p>
+<h2>Boss Phases</h2>
+<ul>${journal.bossPhases.map((item) => `<li>${item}</li>`).join('') || '<li>None provided.</li>'}</ul>
+<h2>Lair Actions</h2>
+<ul>${journal.lairActions.map((item) => `<li>${item}</li>`).join('') || '<li>None provided.</li>'}</ul>
+<h2>Environmental Hazards</h2>
+<ul>${journal.environmentHazards.map((item) => `<li>${item}</li>`).join('') || '<li>None provided.</li>'}</ul>
+`.trim();
+
     return {
       meta: {
         generator: 'SKS Encounter Generator',
@@ -414,13 +441,24 @@
         rawXp: bestEncounter.rawXp
       },
       monsters,
-      journal: {
-        treasure: hooks?.treasureIdeas || [],
-        narrativeHooks: hooks?.narrativeIdeas || [],
-        bossBehavior: hooks ? `${hooks.bossChassis} ${hooks.bossBehavior}` : '',
-        bossPhases: hooks ? [hooks.bossPhaseTwo, hooks.bossPhaseThree] : [],
-        lairActions: hooks?.lairActions || [],
-        environmentHazards: hooks ? [hooks.hazard, hooks.objective, hooks.twist] : []
+      journal,
+      journalEntry: {
+        name: `SKS ${lastGenerated.context.environment.toUpperCase()} ${lastGenerated.context.difficulty.toUpperCase()} Encounter - Encounter Brief`,
+        pages: [
+          {
+            name: 'Encounter Brief',
+            type: 'text',
+            text: {
+              format: 1,
+              content: journalHtml
+            }
+          }
+        ],
+        flags: {
+          sks: {
+            contains: ['treasure', 'narrativeHooks', 'bossBehavior', 'bossPhases', 'lairActions', 'environmentHazards']
+          }
+        }
       }
     };
   }

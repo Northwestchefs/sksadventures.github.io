@@ -32,5 +32,30 @@
     "bossPhases": [],
     "lairActions": [],
     "environmentHazards": []
+  },
+  "journalEntry": {
+    "name": "Swamp Basilisk Ambush - Encounter Brief",
+    "pages": [
+      {
+        "name": "Encounter Brief",
+        "type": "text",
+        "text": {
+          "format": 1,
+          "content": "<h1>Encounter Brief</h1><p><strong>Difficulty:</strong> HARD</p><p><strong>Environment:</strong> swamp</p><h2>Treasure Ideas</h2><ul><li>None provided.</li></ul><h2>Narrative Hooks</h2><ul><li>None provided.</li></ul><h2>Boss Behavior</h2><p>Basilisk opens with battlefield control</p><h2>Boss Phases</h2><ul><li>None provided.</li></ul><h2>Lair Actions</h2><ul><li>None provided.</li></ul><h2>Environmental Hazards</h2><ul><li>None provided.</li></ul>"
+        }
+      }
+    ],
+    "flags": {
+      "sks": {
+        "contains": [
+          "treasure",
+          "narrativeHooks",
+          "bossBehavior",
+          "bossPhases",
+          "lairActions",
+          "environmentHazards"
+        ]
+      }
+    }
   }
 }
