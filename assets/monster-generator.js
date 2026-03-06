@@ -14,6 +14,12 @@ const PRESETS = {
   'Beast Stalker': { name: 'Duskmaw Prowler', subtitle: 'Large beast, unaligned', role: 'ambusher', cr: '4', environment: 'forest, grassland', origin: 'primal', ac: 14, hp: 76, speed: { walk: 40, climb: 20 }, abilities: { str: 18, dex: 14, con: 16, int: 3, wis: 13, cha: 8 }, attacks: [{ name: 'Rending Claw', kind: 'Melee Weapon Attack', theme: 'claws', toHit: '+6', range: 'reach 5 ft.', target: 'one target', hit: '12 (2d6 + 5) slashing damage', damage: '2d6+5', damageType: 'slashing' }], actions: [{ name: 'Pounce', description: 'If the prowler moves at least 20 feet straight toward a creature then hits with claw, target must succeed on DC 14 Strength save or be knocked prone.' }] },
   'Undead Horror': { name: 'Crypt Warden', subtitle: 'Medium undead, lawful evil', role: 'defender', cr: '7', environment: 'dungeon, graveyard', origin: 'undead', ac: 17, hp: 128, speed: { walk: 30 }, abilities: { str: 19, dex: 11, con: 19, int: 10, wis: 12, cha: 15 }, resistances: ['necrotic', 'bludgeoning, piercing, and slashing from nonmagical attacks'], immunities: ['poison'], conditionImmunities: ['poisoned', 'exhaustion'], attacks: [{ name: 'Grave Halberd', kind: 'Melee Weapon Attack', theme: 'polearm', toHit: '+8', range: 'reach 10 ft.', target: 'one target', hit: '15 (2d10 + 4) slashing plus 7 (2d6) necrotic', damage: '2d10+4', damageType: 'slashing', secondaryDamage: '2d6 necrotic' }] },
   'Arcane Controller': { name: 'Moonglass Arcanist', subtitle: 'Medium humanoid (elf), neutral', role: 'controller', cr: '9', environment: 'urban, ruins', origin: 'fey-touched', ac: 15, hp: 110, speed: { walk: 30 }, abilities: { str: 9, dex: 14, con: 14, int: 19, wis: 15, cha: 16 }, spellcasting: [{ name: 'Innate Spellcasting', description: 'Spell save DC 17, +9 to hit. At will: mage hand, ray of frost. 3/day: hypnotic pattern, lightning bolt. 1/day: chain lightning.' }] },
+  'Sky Tyrant': { name: 'Tempest Crown Roc', subtitle: 'Huge monstrosity, neutral evil', role: 'artillery', cr: '11', environment: 'mountain, coastal', origin: 'stormbound', ac: 17, hp: 172, speed: { walk: 20, fly: 80 }, abilities: { str: 23, dex: 16, con: 20, int: 8, wis: 15, cha: 12 } },
+  'Planar Juggernaut': { name: 'Aether Bastion', subtitle: 'Large construct, lawful neutral', role: 'defender', cr: '13', environment: 'planar, ruins', origin: 'clockwork', ac: 20, hp: 210, speed: { walk: 30 }, abilities: { str: 24, dex: 10, con: 23, int: 12, wis: 16, cha: 9 } },
+  'Swamp Ambusher': { name: 'Bogveil Lurker', subtitle: 'Large monstrosity, chaotic neutral', role: 'ambusher', cr: '6', environment: 'swamp, forest', origin: 'cursed', ac: 15, hp: 104, speed: { walk: 30, swim: 40 }, abilities: { str: 18, dex: 16, con: 17, int: 6, wis: 14, cha: 8 } },
+  'Abyss Captain': { name: 'Chainbrand Despot', subtitle: 'Medium fiend, lawful evil', role: 'support', cr: '10', environment: 'dungeon, planar, urban', origin: 'infernal', ac: 18, hp: 145, speed: { walk: 30 }, abilities: { str: 17, dex: 14, con: 18, int: 16, wis: 13, cha: 20 } },
+  'Fey Duelist': { name: 'Thorncourt Bladedancer', subtitle: 'Medium fey, chaotic good', role: 'skirmisher', cr: '8', environment: 'forest, planar', origin: 'fey-touched', ac: 18, hp: 123, speed: { walk: 40 }, abilities: { str: 12, dex: 22, con: 14, int: 15, wis: 14, cha: 18 } },
+  'Deep Delver': { name: 'Gravelung Tunneler', subtitle: 'Huge aberration, unaligned', role: 'brute', cr: '9', environment: 'underdark, dungeon', origin: 'void', ac: 16, hp: 168, speed: { walk: 20, burrow: 40 }, abilities: { str: 22, dex: 8, con: 21, int: 5, wis: 11, cha: 6 } },
 };
 
 const ATTACK_THEMES = ['longsword', 'great axe', 'spear', 'dagger', 'bow', 'crossbow', 'claws', 'bite', 'tail', 'tentacle', 'slam', 'gore', 'necrotic blast', 'frost shard', 'moonlit strike', 'shadow lash'];
@@ -35,56 +41,34 @@ const RANDOM_STYLES = {
   aberrant: 'Aberrant',
   celestial: 'Celestial',
   swarm: 'Swarm',
+  draconic: 'Draconic',
+  infernal: 'Infernal',
+  feywild: 'Feywild',
+  aquatic: 'Aquatic',
 };
 
 const SIZE_OPTIONS = ['Tiny', 'Small', 'Medium', 'Large', 'Huge', 'Gargantuan'];
 const MONSTER_TYPES = ['aberration', 'beast', 'celestial', 'construct', 'dragon', 'elemental', 'fey', 'fiend', 'giant', 'humanoid', 'monstrosity', 'ooze', 'plant', 'undead'];
 const ALIGNMENTS = ['lawful good', 'neutral good', 'chaotic good', 'lawful neutral', 'neutral', 'chaotic neutral', 'lawful evil', 'neutral evil', 'chaotic evil', 'unaligned'];
-const ORIGINS = ['primal', 'arcane', 'divine', 'cursed', 'void', 'fey-touched', 'infernal', 'clockwork', 'stormbound', 'shadow'];
+const ORIGINS = ['primal', 'arcane', 'divine', 'cursed', 'void', 'fey-touched', 'infernal', 'clockwork', 'stormbound', 'shadow', 'draconic'];
 const ENVIRONMENTS = ['arctic', 'coastal', 'desert', 'dungeon', 'forest', 'grassland', 'mountain', 'swamp', 'underdark', 'underwater', 'urban', 'volcanic', 'badlands', 'ruins', 'graveyard', 'planar'];
 const ROLES = ['brute', 'skirmisher', 'controller', 'artillery', 'support', 'defender', 'boss', 'ambusher'];
 const DAMAGE_TYPES = ['slashing', 'piercing', 'bludgeoning', 'fire', 'cold', 'lightning', 'thunder', 'acid', 'poison', 'necrotic', 'radiant', 'psychic', 'force'];
 const CONDITIONS = ['blinded', 'charmed', 'deafened', 'frightened', 'grappled', 'paralyzed', 'petrified', 'poisoned', 'prone', 'restrained', 'stunned'];
 const SENSE_OPTIONS = ['darkvision 60 ft.', 'darkvision 120 ft.', 'blindsight 10 ft.', 'blindsight 30 ft.', 'tremorsense 30 ft.', 'truesight 60 ft.'];
-const LANGUAGE_OPTIONS = ['Common', 'Draconic', 'Infernal', 'Abyssal', 'Celestial', 'Sylvan', 'Primordial', 'Deep Speech', 'Undercommon', 'telepathy 60 ft.'];
+const LANGUAGE_OPTIONS = ['Common', 'Draconic', 'Infernal', 'Abyssal', 'Celestial', 'Sylvan', 'Primordial', 'Deep Speech', 'Undercommon', 'Aquan', 'telepathy 60 ft.'];
 
 const STYLE_PROFILES = {
-  balanced: {
-    names: ['Riftclaw Predator', 'Moonfen Howler', 'Runic Bastion', 'Ashcoil Ravager', 'Stonevein Brute', 'Glasswing Manticore'],
-    traits: ['Battle-hardened', 'Adaptive', 'Relentless'],
-    actions: ['Crushing Advance', 'Tactical Feint', 'Break Formation'],
-    flavor: ['Disciplined hunter', 'Ruin-forged enforcer', 'Territorial apex creature'],
-  },
-  horror: {
-    names: ['Whispering Ossuary', 'Gloam-Eyed Collector', 'Pale Mire Widow', 'Hollow Choir Horror', 'Dread Lantern Wretch'],
-    traits: ['Aura of Dread', 'Unnerving Presence', 'Body Horror'],
-    actions: ['Devouring Scream', 'Harvest Memory', 'Grave Pull'],
-    flavor: ['Feeds on fear', 'Stalks isolated prey', 'Turns battlefields into nightmares'],
-  },
-  elemental: {
-    names: ['Tempest-Core Myrmidon', 'Cinderwake Serpent', 'Tidelash Colossus', 'Shiverglass Golem', 'Thunderbrand Roc'],
-    traits: ['Elemental Flux', 'Living Storm', 'Fused Core'],
-    actions: ['Elemental Surge', 'Seismic Pulse', 'Flash Freeze'],
-    flavor: ['Raw elemental force given hunger', 'A conduit for planar weather', 'Unstable and catastrophic'],
-  },
-  aberrant: {
-    names: ['Nexuspore Seer', 'Violet Maw Savant', 'Mindrift Stalker', 'Orbit-Eye Devourer', 'Warpfold Anatomist'],
-    traits: ['Reality Distortion', 'Psionic Feedback', 'Impossible Anatomy'],
-    actions: ['Mind Lance', 'Spatial Twist', 'Neural Collapse'],
-    flavor: ['Alien intelligence with predatory curiosity', 'Warps local geometry', 'Hears thoughts as music'],
-  },
-  celestial: {
-    names: ['Dawnward Justicar', 'Star-Vigil Seraph', 'Mercybrand Exemplar', 'Sunshard Arbiter', 'Choirblade Guardian'],
-    traits: ['Radiant Ward', 'Beacon of Judgment', 'Blessed Aegis'],
-    actions: ['Solar Verdict', 'Purging Lance', 'Heavenly Rebuke'],
-    flavor: ['Serves an ancient vow', 'Punishes oathbreakers', 'Balances wrath and grace'],
-  },
-  swarm: {
-    names: ['Gnashcloud Swarm-Lord', 'Thousand-Fang Cluster', 'Skittermass Regent', 'Needlewing Brood', 'Carrion Bloom Hive'],
-    traits: ['Swarm Body', 'Overrun', 'Hive Mind'],
-    actions: ['Razor Flood', 'Brood Spill', 'Consume Supplies'],
-    flavor: ['Acts as one body', 'Devours terrain and morale', 'Grows stronger near corpses'],
-  },
+  balanced: { names: ['Riftclaw Predator', 'Moonfen Howler', 'Runic Bastion', 'Ashcoil Ravager', 'Stonevein Brute', 'Glasswing Manticore'], traits: ['Battle-hardened', 'Adaptive', 'Relentless'], actions: ['Crushing Advance', 'Tactical Feint', 'Break Formation'], flavor: ['Disciplined hunter', 'Ruin-forged enforcer', 'Territorial apex creature'] },
+  horror: { names: ['Whispering Ossuary', 'Gloam-Eyed Collector', 'Pale Mire Widow', 'Hollow Choir Horror', 'Dread Lantern Wretch'], traits: ['Aura of Dread', 'Unnerving Presence', 'Body Horror'], actions: ['Devouring Scream', 'Harvest Memory', 'Grave Pull'], flavor: ['Feeds on fear', 'Stalks isolated prey', 'Turns battlefields into nightmares'] },
+  elemental: { names: ['Tempest-Core Myrmidon', 'Cinderwake Serpent', 'Tidelash Colossus', 'Shiverglass Golem', 'Thunderbrand Roc'], traits: ['Elemental Flux', 'Living Storm', 'Fused Core'], actions: ['Elemental Surge', 'Seismic Pulse', 'Flash Freeze'], flavor: ['Raw elemental force given hunger', 'A conduit for planar weather', 'Unstable and catastrophic'] },
+  aberrant: { names: ['Nexuspore Seer', 'Violet Maw Savant', 'Mindrift Stalker', 'Orbit-Eye Devourer', 'Warpfold Anatomist'], traits: ['Reality Distortion', 'Psionic Feedback', 'Impossible Anatomy'], actions: ['Mind Lance', 'Spatial Twist', 'Neural Collapse'], flavor: ['Alien intelligence with predatory curiosity', 'Warps local geometry', 'Hears thoughts as music'] },
+  celestial: { names: ['Dawnward Justicar', 'Star-Vigil Seraph', 'Mercybrand Exemplar', 'Sunshard Arbiter', 'Choirblade Guardian'], traits: ['Radiant Ward', 'Beacon of Judgment', 'Blessed Aegis'], actions: ['Solar Verdict', 'Purging Lance', 'Heavenly Rebuke'], flavor: ['Serves an ancient vow', 'Punishes oathbreakers', 'Balances wrath and grace'] },
+  swarm: { names: ['Gnashcloud Swarm-Lord', 'Thousand-Fang Cluster', 'Skittermass Regent', 'Needlewing Brood', 'Carrion Bloom Hive'], traits: ['Swarm Body', 'Overrun', 'Hive Mind'], actions: ['Razor Flood', 'Brood Spill', 'Consume Supplies'], flavor: ['Acts as one body', 'Devours terrain and morale', 'Grows stronger near corpses'] },
+  draconic: { names: ['Emberspire Scion', 'Verdant Scale Tyrant', 'Nightglass Drake', 'Cataclysm Wyrmlord', 'Crownfire Broodqueen'], traits: ['Ancient Scale Ward', 'Draconic Majesty', 'Hoard Instinct'], actions: ['Breath of Dominion', 'Tailquake Rupture', 'Wingstorm'], flavor: ['Seeks tribute and domination', 'Treats battle as a declaration of lineage', 'Unleashes area devastation'] },
+  infernal: { names: ['Ash-Contract Reaver', 'Hellchain Inquisitor', 'Brimstone Debt Collector', 'Censer of Ruin', 'Iron Sigil Tormentor'], traits: ['Infernal Contract', 'Hellfire Brand', 'Cruel Precision'], actions: ['Soul Lien Strike', 'Chains of Damnation', 'Scalding Verdict'], flavor: ['Manipulates foes through fear and bargains', 'Marks prey with infernal seals', 'Punishes oathbreakers mercilessly'] },
+  feywild: { names: ['Laughing Briar Duchess', 'Mirrorgrove Trickster', 'Moonpetal Huntmaster', 'Thorn Masque Herald', 'Velvet Antler Regent'], traits: ['Glamour Veil', 'Capricious Step', 'Moonlit Grace'], actions: ['Prismatic Snare', 'Bewildering Waltz', 'Dreamthorn Volley'], flavor: ['Fights like a cruel dance', 'Delights in misdirection', 'Rewards clever roleplay'] },
+  aquatic: { names: ['Abyss Current Oracle', 'Drownsong Leviathan', 'Coral Fanged Matron', 'Saltwake Executioner', 'Trenchlight Devourer'], traits: ['Pressure Skin', 'Tidal Adaptation', 'Drowncaller Aura'], actions: ['Riptide Crush', 'Saltburst Javelin', 'Undertow Drag'], flavor: ['Controls battlefield flow like currents', 'Drags victims out of formation', 'Strikes then vanishes into mist and spray'] },
 };
 
 const formEl = document.getElementById('monster-form');
@@ -427,55 +411,61 @@ function randomFromCr() {
 function generateRandomMonster(cr, styleKey) {
   const profile = STYLE_PROFILES[styleKey] || STYLE_PROFILES.balanced;
   const numericCr = crToNumber(cr);
-  const names = [...(RANDOM_BY_CR[cr] || []), ...profile.names];
+  const names = [...(RANDOM_BY_CR[cr] || []), ...profile.names, ...Object.values(PRESETS).map((preset) => preset.name)];
   const name = pick(names);
   const size = weightedPick([
-    { value: 'Small', weight: 1 },
+    { value: 'Tiny', weight: numericCr <= 2 ? 1 : 0 },
+    { value: 'Small', weight: 2 },
     { value: 'Medium', weight: 4 },
     { value: 'Large', weight: 3 },
-    { value: 'Huge', weight: numericCr >= 10 ? 2 : 1 },
-    { value: 'Gargantuan', weight: numericCr >= 15 ? 1 : 0 },
+    { value: 'Huge', weight: numericCr >= 8 ? 2 : 1 },
+    { value: 'Gargantuan', weight: numericCr >= 14 ? 1 : 0 },
   ]) || 'Medium';
   const type = pick(MONSTER_TYPES);
   const role = pick(ROLES);
   const alignment = pick(ALIGNMENTS);
-  const origin = pick(ORIGINS);
-  const environmentList = pickMany(ENVIRONMENTS, randomInt(2, 4));
-  const tags = pickMany(['alpha', 'lurker', 'hunter', 'ritual', 'sentinel', 'siege', 'pack', 'arcane', 'mythic', 'venomous', 'frenzied'], 2).join(', ');
+  const origin = chance(0.65) ? pick(ORIGINS) : styleKey;
+  const environmentList = pickMany(ENVIRONMENTS, randomInt(2, 5));
+  const tags = pickMany(['alpha', 'lurker', 'hunter', 'ritual', 'sentinel', 'siege', 'pack', 'arcane', 'mythic', 'venomous', 'frenzied', 'eldritch', 'planar', 'cunning'], randomInt(2, 4)).join(', ');
 
   const proficiencyBonus = Math.max(2, Math.ceil((numericCr + 1) / 4) + 1);
-  const ac = randomInt(11 + Math.floor(numericCr / 2), 14 + Math.floor(numericCr / 2));
-  const hp = randomInt(18 + numericCr * 15, 38 + numericCr * 26);
-  const hitDiceCount = Math.max(3, Math.round(hp / 12));
-  const conMod = randomInt(1, Math.max(3, Math.floor(numericCr / 2) + 2));
+  const ac = randomInt(11 + Math.floor(numericCr / 2), 15 + Math.floor(numericCr / 2));
+  const hp = randomInt(18 + numericCr * 15, 46 + numericCr * 30);
+  const hitDiceCount = Math.max(3, Math.round(hp / 11));
+  const conMod = randomInt(1, Math.max(3, Math.floor(numericCr / 2) + 3));
+
   const speed = {
-    walk: randomInt(25, 45),
-    climb: chance(0.35) ? randomInt(15, 35) : 0,
-    swim: chance(0.25) ? randomInt(20, 40) : 0,
-    burrow: chance(0.2) ? randomInt(10, 30) : 0,
-    fly: chance(0.35) ? randomInt(30, 70) : 0,
-    hover: chance(0.2),
+    walk: randomInt(25, 50),
+    climb: chance(0.45) ? randomInt(15, 40) : 0,
+    swim: chance(styleKey === 'aquatic' ? 0.95 : 0.35) ? randomInt(20, 50) : 0,
+    burrow: chance(0.28) ? randomInt(10, 35) : 0,
+    fly: chance(styleKey === 'draconic' || styleKey === 'celestial' ? 0.65 : 0.4) ? randomInt(30, 90) : 0,
+    hover: chance(0.26),
   };
 
   const abilities = {
     str: clamp(8 + randomInt(0, 10) + Math.floor(numericCr / 2), 3, 30),
-    dex: clamp(8 + randomInt(0, 10), 3, 30),
+    dex: clamp(8 + randomInt(0, 12), 3, 30),
     con: clamp(10 + randomInt(0, 10) + Math.floor(numericCr / 3), 3, 30),
-    int: clamp(4 + randomInt(0, 14), 1, 30),
-    wis: clamp(6 + randomInt(0, 12), 1, 30),
-    cha: clamp(5 + randomInt(0, 14), 1, 30),
+    int: clamp(4 + randomInt(0, 16), 1, 30),
+    wis: clamp(6 + randomInt(0, 14), 1, 30),
+    cha: clamp(5 + randomInt(0, 16), 1, 30),
   };
 
   const mainDamage = pick(DAMAGE_TYPES);
-  const attackTheme = pick(ATTACK_THEMES);
-  const avgDamage = randomInt(Math.max(4, Math.floor(4 + numericCr * 1.8)), Math.max(8, Math.floor(10 + numericCr * 2.7)));
-  const dice = damageDice(avgDamage, attackTheme);
-  const toHit = `+${Math.max(3, proficiencyBonus + Math.floor((abilities.str - 10) / 2))}`;
-  const saveDc = 10 + proficiencyBonus + Math.floor((abilities.wis - 10) / 2);
+  const attackCount = randomInt(1, numericCr >= 8 ? 3 : 2);
+  const traitCount = randomInt(1, 3);
+  const actionCount = randomInt(1, 3);
+  const bonusCount = chance(0.75) ? randomInt(1, 2) : 0;
+  const reactionCount = chance(0.8) ? randomInt(1, 2) : 0;
+  const legendaryCount = numericCr >= 10 ? randomInt(1, 3) : 0;
+  const lairCount = numericCr >= 12 ? randomInt(1, 2) : 0;
+  const mythicCount = numericCr >= 17 && chance(0.65) ? randomInt(1, 2) : 0;
 
+  const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.wis, abilities.cha) - 10) / 2);
   const roleFlavor = pick(profile.flavor);
-  const traitName = `${pick(profile.traits)} ${pick(['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol'])}`;
-  const actionName = `${pick(profile.actions)} ${pick(['Burst', 'Strike', 'Wave', 'Pulse', 'Assault'])}`;
+
+  const attacks = Array.from({ length: attackCount }, () => buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey }));
 
   return {
     identity: {
@@ -500,60 +490,162 @@ function generateRandomMonster(cr, styleKey) {
       abilities,
       proficiencyBonus,
       initiativeBonus: Math.floor((abilities.dex - 10) / 2),
-      passivePerception: 10 + Math.floor((abilities.wis - 10) / 2) + (chance(0.5) ? proficiencyBonus : 0),
+      passivePerception: 10 + Math.floor((abilities.wis - 10) / 2) + (chance(0.55) ? proficiencyBonus : 0),
     },
     defense: {
       ...monster.defense,
       savingThrows: buildSavingThrows(abilities, proficiencyBonus),
       skills: buildSkills(proficiencyBonus),
-      vulnerabilities: chance(0.25) ? [pick(DAMAGE_TYPES)] : [],
-      resistances: pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), randomInt(1, 3)),
-      immunities: chance(0.2) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), 1) : [],
-      conditionImmunities: chance(0.4) ? pickMany(CONDITIONS, randomInt(1, 2)) : [],
-      senses: pickMany(SENSE_OPTIONS, randomInt(1, 2)).join(', '),
-      languages: pickMany(LANGUAGE_OPTIONS, randomInt(1, 3)).join(', '),
-      telepathy: chance(0.35) ? `${randomInt(30, 120)} ft.` : '',
+      vulnerabilities: chance(0.3) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), 1) : [],
+      resistances: pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), randomInt(1, 4)),
+      immunities: chance(0.4) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), randomInt(1, 2)) : [],
+      conditionImmunities: chance(0.6) ? pickMany(CONDITIONS, randomInt(1, 3)) : [],
+      senses: pickMany(SENSE_OPTIONS, randomInt(1, 3)).join(', '),
+      languages: pickMany(LANGUAGE_OPTIONS, randomInt(1, 4)).join(', '),
+      telepathy: chance(0.4) ? `${randomInt(30, 120)} ft.` : '',
     },
     combat: {
       ...monster.combat,
-      traits: [{ name: traitName, category: 'Trait', description: `${name} embodies a ${roleFlavor.toLowerCase()} approach to combat and gains advantage on one attack each turn against isolated foes.`, saveDc: '', recharge: '', usage: '', trigger: '' }],
-      actions: [{ name: actionName, category: 'Action', description: `Creatures in a 20-foot area must succeed on a DC ${saveDc} ${pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom'])} save or suffer a tactical setback and ${randomInt(5, 18)} (${damageDice(randomInt(5, 18), attackTheme)}) ${mainDamage} damage.`, saveDc: `${saveDc}`, recharge: chance(0.4) ? '5-6' : '', usage: '', trigger: '' }],
-      bonusActions: chance(0.6) ? [{ name: pick(['Predatory Shift', 'Arc Flash Step', 'Skitter Dash', 'Grim Reposition']), category: 'Bonus Action', description: `${name} moves up to half its speed without provoking opportunity attacks.`, saveDc: '', recharge: '', usage: '', trigger: '' }] : [],
-      reactions: chance(0.65) ? [{ name: pick(['Reactive Guard', 'Warp Riposte', 'Spiteful Counter']), category: 'Reaction', description: `When hit by an attack, ${name} reduces damage by ${randomInt(4, 12)} and can move 10 feet.`, saveDc: '', recharge: '', usage: chance(0.35) ? '3/day' : '', trigger: 'When hit by an attack' }] : [],
-      legendaryActions: numericCr >= 10 ? [{ name: pick(['Predator Pulse', 'Void Lash', 'Solar Flare Step']), category: 'Legendary', description: `${name} makes a quick strike or moves up to its speed.`, saveDc: '', recharge: '', usage: 'Costs 1 action', trigger: '' }] : [],
-      lairActions: numericCr >= 12 ? [{ name: pick(['Falling Cinders', 'Warping Ground', 'Howling Dark']), category: 'Lair', description: `On initiative count 20, the battlefield shifts and creatures make a DC ${saveDc} save or take ${randomInt(6, 16)} damage.`, saveDc: `${saveDc}`, recharge: '', usage: '', trigger: '' }] : [],
-      mythic: numericCr >= 17 && chance(0.55) ? [{ name: 'Mythic Resurgence', category: 'Mythic', description: `When reduced to 0 hit points, ${name} erupts with new power, regains ${Math.floor(hp / 2)} hit points, and unlocks additional effects.`, saveDc: '', recharge: '', usage: '1/day', trigger: 'When first reduced to 0 hit points' }] : [],
-      attacks: [{
-        name: `${titleCase(attackTheme)} Strike`,
-        kind: chance(0.25) ? 'Ranged Weapon Attack' : 'Melee Weapon Attack',
-        theme: attackTheme,
-        toHit,
-        range: chance(0.25) ? `${randomInt(30, 120)}/${randomInt(120, 320)} ft.` : `reach ${randomInt(5, 15)} ft.`,
-        target: chance(0.25) ? 'up to two targets' : 'one target',
-        hit: `${avgDamage} (${dice}) ${mainDamage} damage${chance(0.45) ? ` plus ${randomInt(4, 14)} (${damageDice(randomInt(4, 14), attackTheme)}) ${pick(DAMAGE_TYPES.filter((d) => d !== mainDamage))}` : ''}`,
-        damage: dice,
-        damageType: mainDamage,
-        secondaryDamage: chance(0.45) ? `${damageDice(randomInt(4, 14), attackTheme)} ${pick(DAMAGE_TYPES.filter((d) => d !== mainDamage))}` : '',
-        save: chance(0.3) ? `${saveDc} ${pick(['Str', 'Dex', 'Con', 'Wis'])}` : '',
-        rider: chance(0.5) ? pick(['Target is knocked prone.', 'Target cannot take reactions until start of its next turn.', 'Target speed is reduced by 10 ft. until end of its next turn.', 'Target cannot regain hit points until start of this creature\'s next turn.']) : '',
-        styleNote: `Generated with ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
-        recharge: chance(0.25) ? '5-6' : '',
-        multiattackGroup: chance(0.7) ? 'Multiattack' : '',
-      }],
-      spellcasting: chance(0.5) ? [{ name: pick(['Innate Spellcasting', 'Psionic Burstcasting', 'Ritual Invocation']), description: `Spell save DC ${saveDc}, +${proficiencyBonus + Math.max(2, Math.floor((abilities.int - 10) / 2))} to hit. At will: ${pickMany(['mage hand', 'minor illusion', 'ray of frost', 'thaumaturgy', 'chill touch'], 2).join(', ')}. 2/day each: ${pickMany(['fear', 'fly', 'fireball', 'lightning bolt', 'slow', 'hunger of hadar'], 2).join(', ')}.` }] : [],
+      traits: Array.from({ length: traitCount }, () => buildFeature(profile.traits, ['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol'], name, roleFlavor, 'Trait')),
+      actions: Array.from({ length: actionCount }, () => buildAction(profile.actions, saveDc, mainDamage, name)),
+      bonusActions: Array.from({ length: bonusCount }, () => buildBonusAction(name)),
+      reactions: Array.from({ length: reactionCount }, () => buildReaction(name)),
+      legendaryActions: Array.from({ length: legendaryCount }, () => buildLegendary(name, styleKey)),
+      lairActions: Array.from({ length: lairCount }, () => buildLair(name, saveDc, styleKey)),
+      mythic: Array.from({ length: mythicCount }, () => buildMythic(name, hp)),
+      attacks,
+      spellcasting: chance(0.7) ? [buildSpellcasting(saveDc, proficiencyBonus, abilities)] : [],
     },
     flavor: {
       ...monster.flavor,
-      summary: `${name} is a ${roleFlavor.toLowerCase()} ${type} engineered for CR ${cr} encounters.`,
-      appearance: pick(['Armor plates etched in runes.', 'A distorted silhouette with too many eyes.', 'Crystalline growths pulse with internal light.', 'Its body leaks elemental residue with every movement.']),
-      behavior: pick(['Tests defenses before committing.', 'Prioritizes isolated and wounded prey.', 'Retreats only to set an ambush.', 'Escalates quickly if bloodied.']),
-      tactics: pick(['Uses terrain to split the party.', 'Pressures spellcasters first.', 'Focuses one target until they drop.', 'Combines crowd control with burst damage.']),
+      summary: `${name} is a ${roleFlavor.toLowerCase()} ${type} built for CR ${cr} encounters with ${RANDOM_STYLES[styleKey] || 'balanced'} flavor.`,
+      appearance: pick(['Armor plates etched in runes.', 'A distorted silhouette with too many eyes.', 'Crystalline growths pulse with internal light.', 'Its body leaks elemental residue with every movement.', 'Its shadow moves half a second out of sync.', 'Each step leaves a brief sigil of power on the ground.']),
+      behavior: pick(['Tests defenses before committing.', 'Prioritizes isolated and wounded prey.', 'Retreats only to set an ambush.', 'Escalates quickly if bloodied.', 'Switches targets whenever someone resists its preferred damage type.']),
+      tactics: pick(['Uses terrain to split the party.', 'Pressures spellcasters first.', 'Focuses one target until they drop.', 'Combines crowd control with burst damage.', 'Cycles between mobility and lockdown abilities each round.']),
       habitat: `${name} is commonly found in ${environmentList.join(', ')} regions.`,
-      encounterIdeas: pick(['Guards a ritual site about to rupture.', 'Hunts anyone carrying an ancient sigil.', 'Appears as a hired weapon in a war camp.', 'Emerges after magical storms.']),
-      loot: pick(['A resonant core worth 500 gp.', 'A map to a hidden vault.', 'A weapon fragment that grants minor elemental power.', 'A charm that can summon lesser kin once.']),
-      gmNotes: `Increase pressure by adding environmental hazards that reflect the ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
+      encounterIdeas: pick(['Guards a ritual site about to rupture.', 'Hunts anyone carrying an ancient sigil.', 'Appears as a hired weapon in a war camp.', 'Emerges after magical storms.', 'Is the final experiment of a desperate archmage.']),
+      loot: pick(['A resonant core worth 500 gp.', 'A map to a hidden vault.', 'A weapon fragment that grants minor elemental power.', 'A charm that can summon lesser kin once.', 'A style-infused trophy usable as a rare crafting component.']),
+      gmNotes: `Increase pressure by adding environmental hazards that reflect the ${RANDOM_STYLES[styleKey] || 'Balanced'} style. Consider adding minions for action economy swings.`,
       readAloud: `A hush falls over the battlefield as ${name} steps forward, its presence bending the mood of the room before the first blow is struck.`,
     },
+  };
+}
+
+function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey }) {
+  const attackTheme = pick(ATTACK_THEMES);
+  const avgDamage = randomInt(Math.max(4, Math.floor(4 + numericCr * 1.7)), Math.max(8, Math.floor(12 + numericCr * 3)));
+  const dice = damageDice(avgDamage, attackTheme);
+  const toHit = `+${Math.max(3, proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.dex) - 10) / 2))}`;
+  const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.wis) - 10) / 2);
+  const secondaryType = pick(DAMAGE_TYPES.filter((d) => d !== mainDamage));
+  const secondaryDamageRoll = damageDice(randomInt(4, 18), attackTheme);
+  return {
+    name: `${titleCase(attackTheme)} ${pick(['Strike', 'Rend', 'Lash', 'Crash', 'Volley'])}`,
+    kind: chance(0.35) ? 'Ranged Weapon Attack' : 'Melee Weapon Attack',
+    theme: attackTheme,
+    toHit,
+    range: chance(0.35) ? `${randomInt(30, 150)}/${randomInt(120, 360)} ft.` : `reach ${randomInt(5, 20)} ft.`,
+    target: pick(['one target', 'up to two targets', 'one creature and one adjacent creature']),
+    hit: `${avgDamage} (${dice}) ${mainDamage} damage${chance(0.55) ? ` plus ${randomInt(4, 18)} (${secondaryDamageRoll}) ${secondaryType}` : ''}`,
+    damage: dice,
+    damageType: mainDamage,
+    secondaryDamage: chance(0.55) ? `${secondaryDamageRoll} ${secondaryType}` : '',
+    save: chance(0.4) ? `${saveDc} ${pick(['Str', 'Dex', 'Con', 'Wis'])}` : '',
+    rider: chance(0.65) ? pick(['Target is knocked prone.', 'Target cannot take reactions until start of its next turn.', 'Target speed is reduced by 10 ft. until end of its next turn.', 'Target cannot regain hit points until start of this creature\'s next turn.', 'Target is pushed 10 feet and must succeed on a concentration check.']) : '',
+    styleNote: `Generated with ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
+    recharge: chance(0.3) ? '5-6' : '',
+    multiattackGroup: chance(0.8) ? 'Multiattack' : '',
+  };
+}
+
+function buildFeature(traits, suffixes, name, roleFlavor, category) {
+  return {
+    name: `${pick(traits)} ${pick(suffixes)}`,
+    category,
+    description: `${name} embodies a ${roleFlavor.toLowerCase()} approach to combat and gains a tactical edge whenever enemies cluster together.`,
+    saveDc: '',
+    recharge: chance(0.2) ? '6' : '',
+    usage: chance(0.3) ? `${randomInt(1, 3)}/day` : '',
+    trigger: chance(0.3) ? pick(['When bloodied', 'When it drops to half hit points', 'When first targeted by a spell']) : '',
+  };
+}
+
+function buildAction(actionNames, saveDc, mainDamage, name) {
+  return {
+    name: `${pick(actionNames)} ${pick(['Burst', 'Strike', 'Wave', 'Pulse', 'Assault'])}`,
+    category: 'Action',
+    description: `Creatures in a ${pick(['15-foot cone', '20-foot radius', '30-foot line'])} must succeed on a DC ${saveDc} ${pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom'])} save or take ${randomInt(8, 24)} (${damageDice(randomInt(8, 24), pick(ATTACK_THEMES))}) ${mainDamage} damage and suffer a tactical setback.`,
+    saveDc: `${saveDc}`,
+    recharge: chance(0.45) ? '5-6' : '',
+    usage: chance(0.35) ? `${randomInt(1, 3)}/day` : '',
+    trigger: chance(0.2) ? `After ${name} hits with an attack` : '',
+  };
+}
+
+function buildBonusAction(name) {
+  return {
+    name: pick(['Predatory Shift', 'Arc Flash Step', 'Skitter Dash', 'Grim Reposition', 'Mirage Snap']),
+    category: 'Bonus Action',
+    description: `${name} moves up to half its speed and can reposition through enemy spaces as difficult terrain.`,
+    saveDc: '',
+    recharge: '',
+    usage: chance(0.35) ? '3/day' : '',
+    trigger: '',
+  };
+}
+
+function buildReaction(name) {
+  return {
+    name: pick(['Reactive Guard', 'Warp Riposte', 'Spiteful Counter', 'Aegis Flicker']),
+    category: 'Reaction',
+    description: `When hit by an attack, ${name} reduces damage by ${randomInt(4, 14)} and may make one attack against the triggering creature.`,
+    saveDc: '',
+    recharge: '',
+    usage: chance(0.35) ? '3/day' : '',
+    trigger: 'When hit by an attack',
+  };
+}
+
+function buildLegendary(name, styleKey) {
+  return {
+    name: pick(['Predator Pulse', 'Void Lash', 'Solar Flare Step', 'Hoard Fury', 'Tidal Slip']),
+    category: 'Legendary',
+    description: `${name} performs a rapid tactical maneuver flavored by the ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
+    saveDc: '',
+    recharge: '',
+    usage: `Costs ${randomInt(1, 2)} action${chance(0.4) ? 's' : ''}`,
+    trigger: '',
+  };
+}
+
+function buildLair(name, saveDc, styleKey) {
+  return {
+    name: pick(['Falling Cinders', 'Warping Ground', 'Howling Dark', 'Surging Vines', 'Crashing Tides']),
+    category: 'Lair',
+    description: `On initiative count 20, ${name} twists the arena with ${RANDOM_STYLES[styleKey] || 'balanced'} energy; creatures must make a DC ${saveDc} save or take ${randomInt(8, 20)} damage.`,
+    saveDc: `${saveDc}`,
+    recharge: '',
+    usage: '',
+    trigger: 'Initiative count 20',
+  };
+}
+
+function buildMythic(name, hp) {
+  return {
+    name: pick(['Mythic Resurgence', 'Second Form Awakening', 'Cataclysmic Renewal']),
+    category: 'Mythic',
+    description: `When reduced to 0 hit points, ${name} erupts with new power, regains ${Math.floor(hp / 2)} hit points, and immediately takes one action.`,
+    saveDc: '',
+    recharge: '',
+    usage: '1/day',
+    trigger: 'When first reduced to 0 hit points',
+  };
+}
+
+function buildSpellcasting(saveDc, proficiencyBonus, abilities) {
+  return {
+    name: pick(['Innate Spellcasting', 'Psionic Burstcasting', 'Ritual Invocation', 'Battle Canticles']),
+    description: `Spell save DC ${saveDc}, +${proficiencyBonus + Math.max(2, Math.floor((Math.max(abilities.int, abilities.cha) - 10) / 2))} to hit. At will: ${pickMany(['mage hand', 'minor illusion', 'ray of frost', 'thaumaturgy', 'chill touch', 'sacred flame', 'gust'], 3).join(', ')}. 3/day each: ${pickMany(['fear', 'fly', 'fireball', 'lightning bolt', 'slow', 'hunger of hadar', 'banishment', 'spirit guardians'], 3).join(', ')}.`,
   };
 }
 
