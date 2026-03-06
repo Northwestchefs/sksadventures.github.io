@@ -57,6 +57,18 @@ const DAMAGE_TYPES = ['slashing', 'piercing', 'bludgeoning', 'fire', 'cold', 'li
 const CONDITIONS = ['blinded', 'charmed', 'deafened', 'frightened', 'grappled', 'paralyzed', 'petrified', 'poisoned', 'prone', 'restrained', 'stunned'];
 const SENSE_OPTIONS = ['darkvision 60 ft.', 'darkvision 120 ft.', 'blindsight 10 ft.', 'blindsight 30 ft.', 'tremorsense 30 ft.', 'truesight 60 ft.'];
 const LANGUAGE_OPTIONS = ['Common', 'Draconic', 'Infernal', 'Abyssal', 'Celestial', 'Sylvan', 'Primordial', 'Deep Speech', 'Undercommon', 'Aquan', 'telepathy 60 ft.'];
+const SRD_RACES = [
+  { race: 'Dragonborn', subraces: [] },
+  { race: 'Dwarf', subraces: ['Hill Dwarf', 'Mountain Dwarf'] },
+  { race: 'Elf', subraces: ['High Elf', 'Wood Elf', 'Dark Elf (Drow)'] },
+  { race: 'Gnome', subraces: ['Forest Gnome', 'Rock Gnome'] },
+  { race: 'Half-Elf', subraces: [] },
+  { race: 'Half-Orc', subraces: [] },
+  { race: 'Halfling', subraces: ['Lightfoot Halfling', 'Stout Halfling'] },
+  { race: 'Human', subraces: [] },
+  { race: 'Tiefling', subraces: [] },
+];
+const SRD_RACE_OPTIONS = ['—', ...SRD_RACES.map((entry) => entry.race)];
 
 const STYLE_PROFILES = {
   balanced: { names: ['Riftclaw Predator', 'Moonfen Howler', 'Runic Bastion', 'Ashcoil Ravager', 'Stonevein Brute', 'Glasswing Manticore'], traits: ['Battle-hardened', 'Adaptive', 'Relentless'], actions: ['Crushing Advance', 'Tactical Feint', 'Break Formation'], flavor: ['Disciplined hunter', 'Ruin-forged enforcer', 'Territorial apex creature'] },
@@ -86,6 +98,8 @@ function createDefaultMonster() {
       subtitle: 'Huge monstrosity, chaotic evil',
       size: 'Huge',
       type: 'monstrosity',
+      ancestryRace: '',
+      ancestrySubrace: '',
       tags: 'predator, alpha',
       alignment: 'chaotic evil',
       environment: 'mountain, volcanic, badlands',
@@ -200,10 +214,15 @@ function renderIdentityFields() {
   const wrap = document.createElement('div');
   wrap.className = 'field-grid';
   const i = monster.identity;
+  const raceSelection = i.ancestryRace || '—';
+  const subraceOptions = getSubraceOptions(i.ancestryRace);
+  const subraceSelection = i.ancestrySubrace || '—';
   wrap.innerHTML = textField('Name', 'identity.name', i.name)
     + textField('Subtitle', 'identity.subtitle', i.subtitle)
     + selectField('Size', 'identity.size', i.size, SIZE_OPTIONS)
     + selectField('Creature Type', 'identity.type', i.type, MONSTER_TYPES)
+    + selectField('SRD Race (humanoids)', 'identity.ancestryRace', raceSelection, SRD_RACE_OPTIONS)
+    + selectField('SRD Subrace', 'identity.ancestrySubrace', subraceSelection, subraceOptions)
     + textField('Subtype / Tags', 'identity.tags', i.tags)
     + selectField('Alignment', 'identity.alignment', i.alignment, ALIGNMENTS)
     + multiSelectField('Environment', 'identity.environment', i.environment, ENVIRONMENTS)
@@ -290,6 +309,20 @@ function handleInputChange(event) {
   if (!path) return;
   const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
   setByPath(monster, path, coerce(value));
+
+  if (path === 'identity.ancestryRace') {
+    const normalizedRace = value === '—' ? '' : value;
+    setByPath(monster, path, normalizedRace);
+    const allowedSubraces = getSubraceOptions(normalizedRace).filter((entry) => entry !== '—');
+    if (!allowedSubraces.includes(monster.identity.ancestrySubrace)) {
+      monster.identity.ancestrySubrace = '';
+    }
+    renderForm();
+  }
+
+  if (path === 'identity.ancestrySubrace' && value === '—') {
+    monster.identity.ancestrySubrace = '';
+  }
 
   if ((path.startsWith('defense.') || path === 'identity.environment') && typeof getByPath(monster, path) === 'string' && path !== 'defense.telepathy') {
     setByPath(monster, path, event.target.value.split(',').map((v) => v.trim()).filter(Boolean));
@@ -423,6 +456,10 @@ function generateRandomMonster(cr, styleKey) {
     { value: 'Gargantuan', weight: numericCr >= 14 ? 1 : 0 },
   ]) || 'Medium';
   const type = pick(MONSTER_TYPES);
+  const ancestry = type === 'humanoid' ? pick(SRD_RACES) : null;
+  const ancestryRace = ancestry ? ancestry.race : '';
+  const ancestrySubrace = ancestry && ancestry.subraces.length ? pick(ancestry.subraces) : '';
+  const humanoidSubtype = ancestrySubrace || ancestryRace;
   const role = pick(ROLES);
   const alignment = pick(ALIGNMENTS);
   const origin = chance(0.65) ? pick(ORIGINS) : styleKey;
@@ -472,9 +509,11 @@ function generateRandomMonster(cr, styleKey) {
     identity: {
       ...monster.identity,
       name,
-      subtitle: `${size} ${type}, ${alignment}`,
+      subtitle: `${size} ${type}${humanoidSubtype ? ` (${humanoidSubtype.toLowerCase()})` : ''}, ${alignment}`,
       size,
       type,
+      ancestryRace,
+      ancestrySubrace,
       tags,
       alignment,
       environment: environmentList.join(', '),
@@ -839,11 +878,13 @@ function convertMonsterToFoundryNpc(sourceMonster) {
 
 function mapIdentityToNpcData(identity, flavor) {
   const subtitleParts = parseSubtitle(identity.subtitle);
+  const ancestry = [identity.ancestryRace, identity.ancestrySubrace].filter(Boolean).join(' • ');
+  const resolvedSubtype = [subtitleParts.subtype, ancestry].filter(Boolean).join(' • ');
   return {
     name: identity.name,
     size: identity.size,
     creatureType: identity.type || subtitleParts.type || 'humanoid',
-    subtype: subtitleParts.subtype,
+    subtype: resolvedSubtype,
     tags: identity.tags || '',
     alignment: identity.alignment || subtitleParts.alignment || 'unaligned',
     cr: identity.cr,
@@ -991,9 +1032,17 @@ function buildBiographyHtml(flavor = {}, identity = {}) {
   ];
 
   const environment = arrayOrEmpty(identity.environment);
-  const identitySummary = `<p><strong>${identity.name || 'Monster'}</strong> • ${identity.size || ''} ${identity.type || ''}${identity.origin ? ` • Origin: ${identity.origin}` : ''}${identity.role ? ` • Role: ${identity.role}` : ''}${environment.length ? ` • Environment: ${environment.join(', ')}` : ''}</p>`;
+  const ancestry = [identity.ancestryRace, identity.ancestrySubrace].filter(Boolean).join(' • ');
+  const identitySummary = `<p><strong>${identity.name || 'Monster'}</strong> • ${identity.size || ''} ${identity.type || ''}${ancestry ? ` • Ancestry: ${ancestry}` : ''}${identity.origin ? ` • Origin: ${identity.origin}` : ''}${identity.role ? ` • Role: ${identity.role}` : ''}${environment.length ? ` • Environment: ${environment.join(', ')}` : ''}</p>`;
   const detailSections = sections.filter(([, value]) => value).map(([title, value]) => `<h3>${title}</h3><p>${value}</p>`).join('');
   return `${identitySummary}${detailSections}`;
+}
+
+function getSubraceOptions(race) {
+  if (!race) return ['—'];
+  const entry = SRD_RACES.find((candidate) => candidate.race === race);
+  if (!entry?.subraces?.length) return ['—'];
+  return ['—', ...entry.subraces];
 }
 
 function parseSubtitle(subtitle = '') {
