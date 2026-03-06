@@ -1,0 +1,21 @@
+{
+  "name": "Swamp Basilisk Ambush",
+  "width": 3000,
+  "height": 2000,
+  "grid": {
+    "size": 100,
+    "type": 1
+  },
+  "environment": {
+    "theme": "swamp",
+    "lighting": "day",
+    "notes": "Use hazardous difficult terrain around pools and roots."
+  },
+  "flags": {
+    "sks": {
+      "encounterDifficulty": "hard",
+      "partyLevel": 5,
+      "partySize": 4
+    }
+  }
+}

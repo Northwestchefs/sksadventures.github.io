@@ -1,0 +1,19 @@
+{
+  "name": "Swamp Basilisk Ambush - Encounter Brief",
+  "folder": "<journal-folder-id>",
+  "pages": [
+    {
+      "name": "Encounter Brief",
+      "type": "text",
+      "text": {
+        "format": 1,
+        "content": "<h1>Swamp Basilisk Ambush</h1><p><strong>Difficulty:</strong> HARD</p><p><strong>Environment:</strong> swamp</p><h2>Narrative Hooks</h2><ul><li>A caravan disappeared near ancient ruins.</li></ul>"
+      }
+    }
+  ],
+  "flags": {
+    "sks": {
+      "contains": ["treasure", "narrativeHooks", "bossBehavior", "bossPhases", "lairActions", "environmentHazards"]
+    }
+  }
+}

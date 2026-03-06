@@ -1,0 +1,17 @@
+{
+  "name": "Basilisk 1",
+  "actorId": "<actor-id>",
+  "x": 400,
+  "y": 400,
+  "disposition": -1,
+  "actorLink": false,
+  "bar1": {
+    "attribute": "attributes.hp"
+  },
+  "flags": {
+    "sks": {
+      "initiativeBonus": 2,
+      "spawnIndex": 0
+    }
+  }
+}
