@@ -190,14 +190,17 @@ const TRAIT_ARCHETYPES = {
   ],
 };
 
-const formEl = document.getElementById('monster-form');
-const statusEl = document.getElementById('studio-status');
+const hasDocument = typeof document !== 'undefined';
+const formEl = hasDocument ? document.getElementById('monster-form') : null;
+const statusEl = hasDocument ? document.getElementById('studio-status') : null;
 
 let monster = createDefaultMonster();
 let srdMonsters = [];
 let srdMonstersByCr = {};
 
-init();
+if (hasDocument && formEl && statusEl) {
+  init();
+}
 
 function createDefaultMonster() {
   return {
@@ -639,8 +642,10 @@ function generateRandomMonster(cr, styleKey) {
     swim: chance(affinity === 'aquatic' ? 0.98 : 0.35) ? randomInt(20, 60) : 0,
     burrow: chance(affinity === 'aquatic' ? 0.08 : 0.28) ? randomInt(10, 35) : 0,
     fly: chance(styleKey === 'draconic' || styleKey === 'celestial' ? 0.65 : affinity === 'aquatic' ? 0.1 : 0.4) ? randomInt(30, 90) : 0,
-    hover: affinity === 'aquatic' ? false : chance(0.26),
+    hover: false,
   };
+
+  speed.hover = speed.fly > 0 && affinity !== 'aquatic' && chance(0.26);
 
   const roleAbilityBoosts = {
     brute: { str: 3, con: 2 }, skirmisher: { dex: 3, wis: 1 }, controller: { int: 3, wis: 1 }, artillery: { dex: 2, int: 2 },
@@ -761,6 +766,7 @@ function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, 
   const secondaryPool = DAMAGE_TYPES.filter((d) => d !== mainDamage && !((affinityProfile?.avoidDamage || []).includes(d)));
   const secondaryType = pick((affinityProfile?.damagePool || secondaryPool).filter((d) => d !== mainDamage));
   const secondaryDamageRoll = damageDice(randomInt(4, 18), attackTheme);
+  const includeSecondaryDamage = chance(0.55) && Boolean(secondaryType);
   return {
     name: `${titleCase(attackTheme)} ${pick(['Strike', 'Rend', 'Lash', 'Crash', 'Volley'])}`,
     kind: chance(0.35) ? 'Ranged Weapon Attack' : 'Melee Weapon Attack',
@@ -768,10 +774,10 @@ function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, 
     toHit,
     range: chance(0.35) ? `${randomInt(30, 150)}/${randomInt(120, 360)} ft.` : `reach ${randomInt(5, 20)} ft.`,
     target: pick(['one target', 'up to two targets', 'one creature and one adjacent creature']),
-    hit: `${avgDamage} (${dice}) ${mainDamage} damage${chance(0.55) ? ` plus ${randomInt(4, 18)} (${secondaryDamageRoll}) ${secondaryType}` : ''}`,
+    hit: `${avgDamage} (${dice}) ${mainDamage} damage${includeSecondaryDamage ? ` plus ${randomInt(4, 18)} (${secondaryDamageRoll}) ${secondaryType}` : ''}`,
     damage: dice,
     damageType: mainDamage,
-    secondaryDamage: chance(0.55) ? `${secondaryDamageRoll} ${secondaryType}` : '',
+    secondaryDamage: includeSecondaryDamage ? `${secondaryDamageRoll} ${secondaryType}` : '',
     save: chance(0.4) ? `${saveDc} ${pick(['Str', 'Dex', 'Con', 'Wis'])}` : '',
     rider: chance(0.65) ? pick(['Target is knocked prone.', 'Target cannot take reactions until start of its next turn.', 'Target speed is reduced by 10 ft. until end of its next turn.', 'Target cannot regain hit points until start of this creature\'s next turn.', 'Target is pushed 10 feet and must succeed on a concentration check.']) : '',
     styleNote: `Generated with ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
@@ -939,6 +945,15 @@ function weightedPick(entries) {
     if (roll <= 0) return entry.value;
   }
   return valid[valid.length - 1].value;
+}
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.__monsterGeneratorTestHooks = {
+    generateRandomMonster,
+    normalizeCrKey,
+    crToNumber,
+    getCrBaseline,
+  };
 }
 
 function clamp(value, min, max) {
@@ -1929,6 +1944,7 @@ function importJson(event) {
 }
 
 function setStatus(message, isError = false) {
+  if (!statusEl) return;
   statusEl.textContent = message;
   statusEl.style.color = isError ? 'var(--danger-text)' : 'var(--muted)';
 }
@@ -1969,4 +1985,6 @@ function coerce(value) {
   return value;
 }
 
-document.body.insertAdjacentHTML('beforeend', `<datalist id="attack-theme-list">${ATTACK_THEMES.map((theme) => `<option value="${theme}"></option>`).join('')}</datalist>`);
+if (hasDocument && document.body) {
+  document.body.insertAdjacentHTML('beforeend', `<datalist id="attack-theme-list">${ATTACK_THEMES.map((theme) => `<option value="${theme}"></option>`).join('')}</datalist>`);
+}
