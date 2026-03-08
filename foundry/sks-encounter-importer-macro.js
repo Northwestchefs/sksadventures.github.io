@@ -29,9 +29,29 @@ async function selectEncounterFile() {
 }
 
 function ensureEncounterShape(data) {
-  if (!data?.encounter || !Array.isArray(data?.monsters) || (!data?.journal && !data?.journalEntry)) {
+  const hasMonsterArray = Array.isArray(data?.monsters) || Array.isArray(data?.actors);
+  if (!data?.encounter || !hasMonsterArray || (!data?.journal && !data?.journalEntry)) {
     throw new Error('Invalid file format. Expected sks-encounter.json export structure.');
   }
+}
+
+function toFiniteNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function getMonsterCount(monster) {
+  return toFiniteNumber(monster?.count ?? monster?.flags?.sks?.count, 1) || 1;
+}
+
+function getMonsterInit(monster) {
+  return toFiniteNumber(
+    monster?.init
+      ?? monster?.system?.attributes?.init?.bonus
+      ?? monster?.system?.attributes?.init?.value
+      ?? monster?.system?.attributes?.init,
+    0
+  );
 }
 
 async function ensureFolder(name, type) {
@@ -41,6 +61,25 @@ async function ensureFolder(name, type) {
 }
 
 function buildMonsterActorData(monster, actorFolderId) {
+  if (monster?.system) {
+    const actorData = foundry.utils.deepClone(monster);
+    delete actorData._id;
+    delete actorData._stats;
+
+    actorData.name = actorData.name || monster.name || 'Encounter Monster';
+    actorData.type = actorData.type || 'npc';
+    actorData.folder = actorFolderId;
+    actorData.prototypeToken = actorData.prototypeToken || {};
+    actorData.prototypeToken.name = actorData.prototypeToken.name || actorData.name;
+    actorData.prototypeToken.actorLink = false;
+
+    return actorData;
+  }
+
+  const hp = toFiniteNumber(monster.hp, 1);
+  const ac = toFiniteNumber(monster.ac, 10);
+  const init = getMonsterInit(monster);
+
   return {
     name: monster.name,
     type: 'npc',
@@ -52,14 +91,15 @@ function buildMonsterActorData(monster, actorFolderId) {
       },
       attributes: {
         hp: {
-          value: monster.hp,
-          max: monster.hp
+          value: hp,
+          max: hp
         },
         ac: {
-          value: monster.ac
+          calc: 'natural',
+          flat: ac
         },
         init: {
-          value: monster.init
+          bonus: String(init)
         }
       }
     },
@@ -123,9 +163,14 @@ function buildJournalHtml(payload) {
   const journalFolder = await ensureFolder('SKS Encounters', 'JournalEntry');
 
   const monsterActors = [];
-  for (const monster of payload.monsters) {
+  const monsters = Array.isArray(payload.monsters) ? payload.monsters : payload.actors;
+  for (const monster of monsters) {
     const actor = await Actor.create(buildMonsterActorData(monster, actorFolder.id));
-    monsterActors.push({ actor, count: Number(monster.count) || 1, init: Number(monster.init) || 0 });
+    monsterActors.push({
+      actor,
+      count: getMonsterCount(monster),
+      init: getMonsterInit(monster)
+    });
   }
 
   let scene = canvas?.scene || game.scenes.current || game.scenes.active;
