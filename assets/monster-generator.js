@@ -326,6 +326,7 @@ function renderForm() {
   });
 
   formEl.querySelectorAll('[data-add]').forEach((btn) => btn.addEventListener('click', addEntry));
+  formEl.querySelectorAll('[data-random-trait]').forEach((btn) => btn.addEventListener('click', addRandomTraitByCr));
   formEl.querySelectorAll('[data-del], [data-dup], [data-up], [data-down]').forEach((btn) => btn.addEventListener('click', mutateEntry));
 }
 
@@ -411,7 +412,10 @@ function renderFlavorFields() {
 function repeatable(title, path, fields) {
   const sectionEl = document.createElement('section');
   const list = getByPath(monster, path) || [];
-  sectionEl.innerHTML = `<h3>${title}</h3><div class="entry-list">${list.map((item, i) => entryHtml(path, i, fields, item)).join('')}</div><button class="btn btn-secondary" type="button" data-add="${path}">Add ${title.slice(0, -1)}</button>`;
+  const randomTraitButton = path === 'combat.traits'
+    ? `<button class="btn btn-secondary" type="button" data-random-trait="${path}">Random Trait (CR)</button>`
+    : '';
+  sectionEl.innerHTML = `<h3>${title}</h3><div class="entry-list">${list.map((item, i) => entryHtml(path, i, fields, item)).join('')}</div><div class="entry-actions">${randomTraitButton}<button class="btn btn-secondary" type="button" data-add="${path}">Add ${title.slice(0, -1)}</button></div>`;
   return sectionEl;
 }
 
@@ -466,6 +470,27 @@ function addEntry(event) {
   arr.push(path.includes('attacks') ? { name: '', kind: 'Melee Weapon Attack', theme: '', toHit: '', range: '', target: '', hit: '', damage: '', damageType: '', secondaryDamage: '', save: '', rider: '', styleNote: '', recharge: '', multiattackGroup: '' } : { name: '', category: titleCase(path.split('.').pop().slice(0, -1)), description: '', saveDc: '', recharge: '', usage: '', trigger: '' });
   renderForm();
   renderPreview();
+}
+
+function addRandomTraitByCr() {
+  const cr = normalizeCrKey(monster?.identity?.cr || '1');
+  const traitPool = buildCrTraitPool(cr, monster);
+  if (!traitPool.length) {
+    setStatus(`No trait templates found for CR ${cr}.`, true);
+    return;
+  }
+
+  const traits = Array.isArray(monster.combat?.traits) ? monster.combat.traits : [];
+  const existingNames = new Set(traits.map((trait) => String(trait?.name || '').toLowerCase()));
+  const availableTraits = traitPool.filter((trait) => !existingNames.has(String(trait.name || '').toLowerCase()));
+  const nextTrait = pick(availableTraits.length ? availableTraits : traitPool);
+
+  traits.push(normalizeCombatFeatureEntry(nextTrait, 'Trait'));
+  monster.combat.traits = traits;
+
+  renderForm();
+  renderPreview();
+  setStatus(`Added CR ${cr} trait: ${nextTrait.name}.`);
 }
 
 function mutateEntry(event) {
@@ -903,6 +928,61 @@ function buildTrait({ profileTraits, name, roleFlavor, role, saveDc, proficiency
     usage,
     trigger,
   };
+}
+
+
+function buildCrTraitPool(crKey, sourceMonster = {}) {
+  const normalizedCr = normalizeCrKey(crKey);
+  const numericCr = crToNumber(normalizedCr);
+  const role = sourceMonster?.identity?.role || 'brute';
+  const type = sourceMonster?.identity?.type || 'monstrosity';
+  const origin = sourceMonster?.identity?.origin || 'arcane';
+  const name = sourceMonster?.identity?.name || 'This creature';
+  const proficiencyBonus = Math.max(2, Math.min(9, 2 + Math.floor((numericCr - 1) / 4)));
+  const saveDc = 8 + proficiencyBonus + Math.max(2, Math.floor((Number(sourceMonster?.core?.abilities?.wis || 10) - 10) / 2));
+  const tiers = {
+    low: ['brute', 'skirmisher', 'ambusher'],
+    mid: ['controller', 'artillery', 'defender'],
+    high: ['support', 'boss', 'controller'],
+    apex: ['boss', 'support', 'defender'],
+  };
+  const tierRoles = numericCr <= 2 ? tiers.low : numericCr <= 8 ? tiers.mid : numericCr <= 15 ? tiers.high : tiers.apex;
+  const roleCandidates = Array.from(new Set([role, ...tierRoles])).filter((entry) => TRAIT_ARCHETYPES[entry]);
+
+  const prefixByOrigin = {
+    cursed: 'Doomscarred', infernal: 'Hellforged', arcane: 'Runebound', primordial: 'Worldfanged', divine: 'Sanctified', undead: 'Gravewrought', fey: 'Moonwoven', aberrant: 'Voidtouched', stormbound: 'Tempestforged', mechanical: 'Clockwork', mutated: 'Warpgrown', ancient: 'Ancient', shadow: 'Nightshrouded', celestial: 'Starblessed', draconic: 'Scaled', elemental: 'Elemental', aquatic: 'Depthborn', primal: 'Wild', summoned: 'Bound', default: 'Battleforged',
+  };
+
+  const traitNames = ['Ward', 'Instinct', 'Carapace', 'Discipline', 'Resurgence', 'Pressure', 'Counterpulse', 'Aegis', 'Overdrive'];
+  const triggerByCr = numericCr >= 10 ? 'as a reaction' : 'once on each turn';
+  const results = [];
+
+  roleCandidates.forEach((roleKey) => {
+    const templates = TRAIT_ARCHETYPES[roleKey] || [];
+    templates.forEach((template, index) => {
+      const prefix = prefixByOrigin[origin] || prefixByOrigin.default;
+      const traitName = `${prefix} ${pick(traitNames)} ${index + 1}`;
+      const scaleText = template.scalesWith === 'saveDc'
+        ? `The target must succeed on a DC ${saveDc} save.`
+        : template.scalesWith === 'proficiency'
+          ? `It scales with proficiency bonus (+${proficiencyBonus}).`
+          : template.scalesWith === 'usage'
+            ? `This can be used up to ${Math.max(1, Math.ceil(proficiencyBonus / 2))} times per round.`
+            : '';
+
+      results.push(normalizeCombatFeatureEntry({
+        name: traitName,
+        category: 'Trait',
+        description: `${name} (${type}) at CR ${normalizedCr} ${template.effect}. ${scaleText}`.trim(),
+        saveDc: template.scalesWith === 'saveDc' ? `${saveDc}` : '',
+        recharge: template.kind === 'counter' || template.kind === 'zone' ? '5-6' : '',
+        usage: template.scalesWith === 'usage' ? `${Math.max(1, Math.ceil(proficiencyBonus / 2))}/round` : '',
+        trigger: template.trigger === 'always active' ? '' : template.trigger || triggerByCr,
+      }, 'Trait'));
+    });
+  });
+
+  return results;
 }
 
 function buildAction(actionNames, saveDc, mainDamage, name, affinityProfile) {
@@ -2032,15 +2112,118 @@ function importJson(event) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
-      monster = JSON.parse(String(reader.result));
+      monster = normalizeMonsterImport(JSON.parse(String(reader.result)));
       renderForm();
       renderPreview();
-      setStatus('Imported monster JSON.');
+      setStatus('Imported monster JSON and normalized it to the current schema.');
     } catch {
       setStatus('Invalid JSON file.', true);
     }
   };
   reader.readAsText(file);
+}
+
+function normalizeMonsterImport(input) {
+  const base = createDefaultMonster();
+  const parsed = input && typeof input === 'object' ? input : {};
+  const parsedIdentity = parsed.identity && typeof parsed.identity === 'object' ? parsed.identity : {};
+  const parsedCore = parsed.core && typeof parsed.core === 'object' ? parsed.core : {};
+  const parsedDefense = parsed.defense && typeof parsed.defense === 'object' ? parsed.defense : {};
+  const parsedCombat = parsed.combat && typeof parsed.combat === 'object' ? parsed.combat : {};
+
+  return {
+    ...base,
+    ...parsed,
+    schemaVersion: Number(parsed.schemaVersion) || base.schemaVersion,
+    identity: {
+      ...base.identity,
+      ...parsedIdentity,
+      environment: normalizeNamedList(parsedIdentity.environment ?? base.identity.environment),
+      cr: normalizeCrKey(parsedIdentity.cr ?? base.identity.cr),
+    },
+    core: {
+      ...base.core,
+      ...parsedCore,
+      speed: { ...base.core.speed, ...(parsedCore.speed || {}) },
+      abilities: { ...base.core.abilities, ...(parsedCore.abilities || {}) },
+    },
+    defense: {
+      ...base.defense,
+      ...parsedDefense,
+      savingThrows: normalizeNamedList(parsedDefense.savingThrows ?? base.defense.savingThrows),
+      skills: normalizeNamedList(parsedDefense.skills ?? base.defense.skills),
+      vulnerabilities: normalizeNamedList(parsedDefense.vulnerabilities ?? base.defense.vulnerabilities),
+      resistances: normalizeNamedList(parsedDefense.resistances ?? base.defense.resistances),
+      immunities: normalizeNamedList(parsedDefense.immunities ?? base.defense.immunities),
+      conditionImmunities: normalizeNamedList(parsedDefense.conditionImmunities ?? base.defense.conditionImmunities),
+      senses: normalizeNamedList(parsedDefense.senses ?? base.defense.senses),
+      languages: normalizeNamedList(parsedDefense.languages ?? base.defense.languages),
+      telepathy: String(parsedDefense.telepathy ?? base.defense.telepathy ?? ''),
+    },
+    combat: {
+      ...base.combat,
+      ...parsedCombat,
+      traits: arrayOrEmpty(parsedCombat.traits).map((entry) => normalizeCombatFeatureEntry(entry, 'Trait')),
+      actions: arrayOrEmpty(parsedCombat.actions).map((entry) => normalizeCombatFeatureEntry(entry, 'Action')),
+      bonusActions: arrayOrEmpty(parsedCombat.bonusActions).map((entry) => normalizeCombatFeatureEntry(entry, 'Bonus Action')),
+      reactions: arrayOrEmpty(parsedCombat.reactions).map((entry) => normalizeCombatFeatureEntry(entry, 'Reaction')),
+      legendaryActions: arrayOrEmpty(parsedCombat.legendaryActions).map((entry) => normalizeCombatFeatureEntry(entry, 'Legendary')),
+      lairActions: arrayOrEmpty(parsedCombat.lairActions).map((entry) => normalizeCombatFeatureEntry(entry, 'Lair')),
+      mythic: arrayOrEmpty(parsedCombat.mythic).map((entry) => normalizeCombatFeatureEntry(entry, 'Mythic')),
+      attacks: arrayOrEmpty(parsedCombat.attacks).map((entry) => normalizeAttackEntry(entry)),
+      spellcasting: arrayOrEmpty(parsedCombat.spellcasting).map((entry) => normalizeSpellcastingEntry(entry)),
+    },
+    flavor: {
+      ...base.flavor,
+      ...(parsed.flavor || {}),
+    },
+    foundryHint: {
+      ...base.foundryHint,
+      ...(parsed.foundryHint || {}),
+    },
+  };
+}
+
+function normalizeCombatFeatureEntry(entry, fallbackCategory = 'Trait') {
+  const item = entry && typeof entry === 'object' ? entry : {};
+  return {
+    name: String(item.name || ''),
+    category: String(item.category || fallbackCategory),
+    description: String(item.description || ''),
+    saveDc: String(item.saveDc || ''),
+    recharge: String(item.recharge || ''),
+    usage: String(item.usage || ''),
+    trigger: String(item.trigger || ''),
+  };
+}
+
+function normalizeAttackEntry(entry) {
+  const item = entry && typeof entry === 'object' ? entry : {};
+  return {
+    name: String(item.name || ''),
+    kind: String(item.kind || 'Melee Weapon Attack'),
+    theme: String(item.theme || ''),
+    toHit: String(item.toHit || ''),
+    range: String(item.range || ''),
+    target: String(item.target || ''),
+    hit: String(item.hit || ''),
+    damage: String(item.damage || ''),
+    damageType: String(item.damageType || ''),
+    secondaryDamage: String(item.secondaryDamage || ''),
+    save: String(item.save || ''),
+    rider: String(item.rider || ''),
+    styleNote: String(item.styleNote || ''),
+    recharge: String(item.recharge || ''),
+    multiattackGroup: String(item.multiattackGroup || ''),
+  };
+}
+
+function normalizeSpellcastingEntry(entry) {
+  const item = entry && typeof entry === 'object' ? entry : {};
+  return {
+    name: String(item.name || ''),
+    description: String(item.description || ''),
+  };
 }
 
 function setStatus(message, isError = false) {
