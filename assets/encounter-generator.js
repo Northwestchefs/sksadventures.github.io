@@ -44,6 +44,7 @@
   const SRD_MONSTER_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/monsters';
   const SRD_MONSTER_API_BASE = 'https://www.dnd5eapi.co';
   const SRD_CACHE_KEY = 'sks-encounter-srd-monsters-v1';
+  const MIN_EXPECTED_SRD_MONSTERS = 300;
 
   const form = document.getElementById('encounter-form');
   const levelEl = document.getElementById('party-level');
@@ -236,7 +237,19 @@
     return detailed;
   }
 
+  function dedupeMonsters(monsters) {
+    const byName = new Map();
+    monsters.forEach((monster) => {
+      const key = String(monster?.name || '').toLowerCase().trim();
+      if (!key || byName.has(key)) return;
+      byName.set(key, monster);
+    });
+    return [...byName.values()];
+  }
+
   async function loadMonsterPool() {
+    const combined = [];
+
     try {
       const response = await fetch('../data/monsters.json');
       if (!response.ok) {
@@ -245,42 +258,40 @@
 
       const data = await response.json();
       const normalized = Array.isArray(data) ? data.map(normalizeMonster).filter(Boolean) : [];
-      if (normalized.length > 0) {
-        statusEl.textContent = `Loaded ${normalized.length} monsters from local data.`;
-        return normalized;
-      }
+      combined.push(...normalized);
     } catch (error) {
-      statusEl.textContent = 'Could not load local monster data. Trying SRD API...';
+      statusEl.textContent = 'Could not load local monster data. Trying additional SRD sources...';
     }
 
-    try {
-      const cached = localStorage.getItem(SRD_CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        const normalizedCached = Array.isArray(parsed) ? parsed.map(normalizeMonster).filter(Boolean) : [];
-        if (normalizedCached.length) {
-          statusEl.textContent = `Loaded ${normalizedCached.length} monsters from cached SRD data.`;
-          return normalizedCached;
+    if (combined.length < MIN_EXPECTED_SRD_MONSTERS) {
+      try {
+        const cached = localStorage.getItem(SRD_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          const normalizedCached = Array.isArray(parsed) ? parsed.map(normalizeMonster).filter(Boolean) : [];
+          combined.push(...normalizedCached);
         }
+      } catch (error) {
+        localStorage.removeItem(SRD_CACHE_KEY);
       }
-    } catch (error) {
-      localStorage.removeItem(SRD_CACHE_KEY);
     }
 
-    try {
-      const srdMonsters = await loadSrdMonstersFromApi();
-      if (srdMonsters.length > 0) {
-        statusEl.textContent = `Loaded ${srdMonsters.length} monsters from the SRD API.`;
-        return srdMonsters;
+    if (combined.length < MIN_EXPECTED_SRD_MONSTERS) {
+      try {
+        const srdMonsters = await loadSrdMonstersFromApi();
+        combined.push(...srdMonsters);
+      } catch (error) {
+        statusEl.textContent = 'SRD API unavailable. Using best available local/cached roster.';
       }
-    } catch (error) {
-      statusEl.textContent = 'SRD API unavailable. Using curated fallback roster.';
     }
 
-    if (statusEl.textContent !== 'SRD API unavailable. Using curated fallback roster.') {
-      statusEl.textContent = 'Local/SRD monster data unavailable. Using curated fallback roster.';
+    const deduped = dedupeMonsters(combined);
+    if (deduped.length > 0) {
+      statusEl.textContent = `Loaded ${deduped.length} monsters from local/cached/SRD sources.`;
+      return deduped;
     }
 
+    statusEl.textContent = 'Local/SRD monster data unavailable. Using curated fallback roster.';
     return FALLBACK_MONSTERS.map((monster) => normalizeMonster(monster)).filter(Boolean);
   }
 
