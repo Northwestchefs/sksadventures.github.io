@@ -126,6 +126,32 @@ const STYLE_PROFILES = {
   aquatic: { names: ['Abyss Current Oracle', 'Drownsong Leviathan', 'Coral Fanged Matron', 'Saltwake Executioner', 'Trenchlight Devourer'], traits: ['Pressure Skin', 'Tidal Adaptation', 'Drowncaller Aura'], actions: ['Riptide Crush', 'Saltburst Javelin', 'Undertow Drag'], flavor: ['Controls battlefield flow like currents', 'Drags victims out of formation', 'Strikes then vanishes into mist and spray'] },
 };
 
+const AFFINITY_RULES = {
+  aquatic: {
+    damagePool: ['bludgeoning', 'piercing', 'cold', 'lightning', 'acid'],
+    avoidDamage: ['fire'],
+    attackThemes: ['bite', 'tail', 'gore', 'claws', 'slam', 'javelin', 'tentacle'],
+    spellsAtWill: ['gust', 'ray of frost', 'minor illusion', 'mage hand', 'shape water'],
+    spellsDaily: ['tidal wave', 'control water', 'lightning bolt', 'slow', 'fog cloud'],
+    bonusActions: ['Undertow Step', 'Current Slip', 'Predatory Surge'],
+    reactions: ['Rip Current Riposte', 'Brine Guard', 'Depth Counter'],
+    legendary: ['Tidal Slip', 'Breaker Pulse', 'Abyssal Rush'],
+    lair: ['Crashing Tides', 'Pressure Surge', 'Razor Current'],
+  },
+  infernal: {
+    damagePool: ['fire', 'necrotic', 'poison'],
+    attackThemes: ['claws', 'tail', 'whip', 'great axe'],
+  },
+  storm: {
+    damagePool: ['lightning', 'thunder', 'cold', 'bludgeoning'],
+    attackThemes: ['spear', 'tail', 'slam', 'bow'],
+  },
+  primal: {
+    damagePool: ['slashing', 'piercing', 'bludgeoning', 'poison'],
+    attackThemes: ['bite', 'claws', 'tail', 'gore', 'slam'],
+  },
+};
+
 const formEl = document.getElementById('monster-form');
 const statusEl = document.getElementById('studio-status');
 
@@ -530,13 +556,15 @@ function generateRandomMonster(cr, styleKey) {
   const proficiencyBonus = Math.max(2, Math.min(9, 2 + Math.floor((numericCr - 1) / 4)));
   const hp = randomInt(baseline.hpMin, baseline.hpMax);
 
+  const affinity = inferAffinity({ styleKey, type, origin, environmentList });
+
   const speed = {
     walk: randomInt(25, 50),
     climb: chance(0.45) ? randomInt(15, 40) : 0,
-    swim: chance(styleKey === 'aquatic' ? 0.95 : 0.35) ? randomInt(20, 50) : 0,
-    burrow: chance(0.28) ? randomInt(10, 35) : 0,
-    fly: chance(styleKey === 'draconic' || styleKey === 'celestial' ? 0.65 : 0.4) ? randomInt(30, 90) : 0,
-    hover: chance(0.26),
+    swim: chance(affinity === 'aquatic' ? 0.98 : 0.35) ? randomInt(20, 60) : 0,
+    burrow: chance(affinity === 'aquatic' ? 0.08 : 0.28) ? randomInt(10, 35) : 0,
+    fly: chance(styleKey === 'draconic' || styleKey === 'celestial' ? 0.65 : affinity === 'aquatic' ? 0.1 : 0.4) ? randomInt(30, 90) : 0,
+    hover: affinity === 'aquatic' ? false : chance(0.26),
   };
 
   const roleAbilityBoosts = {
@@ -565,7 +593,8 @@ function generateRandomMonster(cr, styleKey) {
   const hitDiceCount = Math.max(2, Math.round(hp / Math.max(1, avgPerDie + conMod)));
   const hitDiceBonus = Math.max(0, hitDiceCount * conMod);
 
-  const mainDamage = pick(DAMAGE_TYPES);
+  const affinityProfile = AFFINITY_RULES[affinity] || AFFINITY_RULES.primal;
+  const mainDamage = pick(affinityProfile.damagePool || DAMAGE_TYPES);
   const attackCount = randomInt(1, numericCr >= 8 ? 3 : 2);
   const traitCount = randomInt(1, 3);
   const actionCount = randomInt(1, 3);
@@ -578,7 +607,7 @@ function generateRandomMonster(cr, styleKey) {
   const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.wis, abilities.cha) - 10) / 2);
   const roleFlavor = pick(profile.flavor);
 
-  const attacks = Array.from({ length: attackCount }, () => buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey }));
+  const attacks = Array.from({ length: attackCount }, () => buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile }));
 
   return {
     identity: {
@@ -611,9 +640,9 @@ function generateRandomMonster(cr, styleKey) {
       ...monster.defense,
       savingThrows: buildSavingThrows(abilities, proficiencyBonus),
       skills: buildSkills(proficiencyBonus),
-      vulnerabilities: chance(0.3) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), 1) : [],
-      resistances: pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), randomInt(1, 4)),
-      immunities: chance(0.4) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage), randomInt(1, 2)) : [],
+      vulnerabilities: chance(0.3) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage && !(affinityProfile.avoidDamage || []).includes(d)), 1) : [],
+      resistances: pickMany((affinityProfile.damagePool || DAMAGE_TYPES).filter((d) => d !== mainDamage), randomInt(1, 3)),
+      immunities: chance(0.4) ? pickMany((affinityProfile.damagePool || DAMAGE_TYPES).filter((d) => d !== mainDamage), randomInt(1, 2)) : [],
       conditionImmunities: chance(0.6) ? pickMany(CONDITIONS, randomInt(1, 3)) : [],
       senses: pickMany(SENSE_OPTIONS, randomInt(1, 3)).join(', '),
       languages: pickMany(LANGUAGE_OPTIONS, randomInt(1, 4)).join(', '),
@@ -622,14 +651,14 @@ function generateRandomMonster(cr, styleKey) {
     combat: {
       ...monster.combat,
       traits: Array.from({ length: traitCount }, () => buildFeature(profile.traits, ['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol'], name, roleFlavor, 'Trait')),
-      actions: Array.from({ length: actionCount }, () => buildAction(profile.actions, saveDc, mainDamage, name)),
-      bonusActions: Array.from({ length: bonusCount }, () => buildBonusAction(name)),
-      reactions: Array.from({ length: reactionCount }, () => buildReaction(name)),
-      legendaryActions: Array.from({ length: legendaryCount }, () => buildLegendary(name, styleKey)),
-      lairActions: Array.from({ length: lairCount }, () => buildLair(name, saveDc, styleKey)),
+      actions: Array.from({ length: actionCount }, () => buildAction(profile.actions, saveDc, mainDamage, name, affinityProfile)),
+      bonusActions: Array.from({ length: bonusCount }, () => buildBonusAction(name, affinityProfile)),
+      reactions: Array.from({ length: reactionCount }, () => buildReaction(name, affinityProfile)),
+      legendaryActions: Array.from({ length: legendaryCount }, () => buildLegendary(name, styleKey, affinityProfile)),
+      lairActions: Array.from({ length: lairCount }, () => buildLair(name, saveDc, styleKey, affinityProfile)),
       mythic: Array.from({ length: mythicCount }, () => buildMythic(name, hp)),
       attacks,
-      spellcasting: chance(0.7) ? [buildSpellcasting(saveDc, proficiencyBonus, abilities)] : [],
+      spellcasting: chance(0.7) ? [buildSpellcasting(saveDc, proficiencyBonus, abilities, affinityProfile)] : [],
     },
     flavor: {
       ...monster.flavor,
@@ -646,15 +675,16 @@ function generateRandomMonster(cr, styleKey) {
   };
 }
 
-function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey }) {
-  const attackTheme = pick(ATTACK_THEMES);
+function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile }) {
+  const attackTheme = pick((affinityProfile && affinityProfile.attackThemes) || ATTACK_THEMES);
   const crKey = normalizeCrKey(numericCr);
   const baseline = getCrBaseline(crKey);
   const avgDamage = randomInt(Math.max(2, baseline.dprMin), Math.max(4, baseline.dprMax));
   const dice = damageDice(avgDamage, attackTheme);
   const toHit = `+${Math.max(3, proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.dex) - 10) / 2))}`;
   const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.wis) - 10) / 2);
-  const secondaryType = pick(DAMAGE_TYPES.filter((d) => d !== mainDamage));
+  const secondaryPool = DAMAGE_TYPES.filter((d) => d !== mainDamage && !((affinityProfile?.avoidDamage || []).includes(d)));
+  const secondaryType = pick((affinityProfile?.damagePool || secondaryPool).filter((d) => d !== mainDamage));
   const secondaryDamageRoll = damageDice(randomInt(4, 18), attackTheme);
   return {
     name: `${titleCase(attackTheme)} ${pick(['Strike', 'Rend', 'Lash', 'Crash', 'Volley'])}`,
@@ -687,11 +717,11 @@ function buildFeature(traits, suffixes, name, roleFlavor, category) {
   };
 }
 
-function buildAction(actionNames, saveDc, mainDamage, name) {
+function buildAction(actionNames, saveDc, mainDamage, name, affinityProfile) {
   return {
     name: `${pick(actionNames)} ${pick(['Burst', 'Strike', 'Wave', 'Pulse', 'Assault'])}`,
     category: 'Action',
-    description: `Creatures in a ${pick(['15-foot cone', '20-foot radius', '30-foot line'])} must succeed on a DC ${saveDc} ${pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom'])} save or take ${randomInt(8, 24)} (${damageDice(randomInt(8, 24), pick(ATTACK_THEMES))}) ${mainDamage} damage and suffer a tactical setback.`,
+    description: `Creatures in a ${pick(['15-foot cone', '20-foot radius', '30-foot line'])} must succeed on a DC ${saveDc} ${pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom'])} save or take ${randomInt(8, 24)} (${damageDice(randomInt(8, 24), pick((affinityProfile && affinityProfile.attackThemes) || ATTACK_THEMES))}) ${mainDamage} damage and suffer a tactical setback.`,
     saveDc: `${saveDc}`,
     recharge: chance(0.45) ? '5-6' : '',
     usage: chance(0.35) ? `${randomInt(1, 3)}/day` : '',
@@ -699,9 +729,9 @@ function buildAction(actionNames, saveDc, mainDamage, name) {
   };
 }
 
-function buildBonusAction(name) {
+function buildBonusAction(name, affinityProfile) {
   return {
-    name: pick(['Predatory Shift', 'Arc Flash Step', 'Skitter Dash', 'Grim Reposition', 'Mirage Snap']),
+    name: pick((affinityProfile && affinityProfile.bonusActions) || ['Predatory Shift', 'Arc Flash Step', 'Skitter Dash', 'Grim Reposition', 'Mirage Snap']),
     category: 'Bonus Action',
     description: `${name} moves up to half its speed and can reposition through enemy spaces as difficult terrain.`,
     saveDc: '',
@@ -711,9 +741,9 @@ function buildBonusAction(name) {
   };
 }
 
-function buildReaction(name) {
+function buildReaction(name, affinityProfile) {
   return {
-    name: pick(['Reactive Guard', 'Warp Riposte', 'Spiteful Counter', 'Aegis Flicker']),
+    name: pick((affinityProfile && affinityProfile.reactions) || ['Reactive Guard', 'Warp Riposte', 'Spiteful Counter', 'Aegis Flicker']),
     category: 'Reaction',
     description: `When hit by an attack, ${name} reduces damage by ${randomInt(4, 14)} and may make one attack against the triggering creature.`,
     saveDc: '',
@@ -723,9 +753,9 @@ function buildReaction(name) {
   };
 }
 
-function buildLegendary(name, styleKey) {
+function buildLegendary(name, styleKey, affinityProfile) {
   return {
-    name: pick(['Predator Pulse', 'Void Lash', 'Solar Flare Step', 'Hoard Fury', 'Tidal Slip']),
+    name: pick((affinityProfile && affinityProfile.legendary) || ['Predator Pulse', 'Void Lash', 'Solar Flare Step', 'Hoard Fury', 'Tidal Slip']),
     category: 'Legendary',
     description: `${name} performs a rapid tactical maneuver flavored by the ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
     saveDc: '',
@@ -735,9 +765,9 @@ function buildLegendary(name, styleKey) {
   };
 }
 
-function buildLair(name, saveDc, styleKey) {
+function buildLair(name, saveDc, styleKey, affinityProfile) {
   return {
-    name: pick(['Falling Cinders', 'Warping Ground', 'Howling Dark', 'Surging Vines', 'Crashing Tides']),
+    name: pick((affinityProfile && affinityProfile.lair) || ['Falling Cinders', 'Warping Ground', 'Howling Dark', 'Surging Vines', 'Crashing Tides']),
     category: 'Lair',
     description: `On initiative count 20, ${name} twists the arena with ${RANDOM_STYLES[styleKey] || 'balanced'} energy; creatures must make a DC ${saveDc} save or take ${randomInt(8, 20)} damage.`,
     saveDc: `${saveDc}`,
@@ -759,11 +789,21 @@ function buildMythic(name, hp) {
   };
 }
 
-function buildSpellcasting(saveDc, proficiencyBonus, abilities) {
+function buildSpellcasting(saveDc, proficiencyBonus, abilities, affinityProfile) {
+  const atWillPool = (affinityProfile && affinityProfile.spellsAtWill) || ['mage hand', 'minor illusion', 'ray of frost', 'thaumaturgy', 'chill touch', 'sacred flame', 'gust'];
+  const dailyPool = (affinityProfile && affinityProfile.spellsDaily) || ['fear', 'fly', 'fireball', 'lightning bolt', 'slow', 'hunger of hadar', 'banishment', 'spirit guardians'];
   return {
     name: pick(['Innate Spellcasting', 'Psionic Burstcasting', 'Ritual Invocation', 'Battle Canticles']),
-    description: `Spell save DC ${saveDc}, +${proficiencyBonus + Math.max(2, Math.floor((Math.max(abilities.int, abilities.cha) - 10) / 2))} to hit. At will: ${pickMany(['mage hand', 'minor illusion', 'ray of frost', 'thaumaturgy', 'chill touch', 'sacred flame', 'gust'], 3).join(', ')}. 3/day each: ${pickMany(['fear', 'fly', 'fireball', 'lightning bolt', 'slow', 'hunger of hadar', 'banishment', 'spirit guardians'], 3).join(', ')}.`,
+    description: `Spell save DC ${saveDc}, +${proficiencyBonus + Math.max(2, Math.floor((Math.max(abilities.int, abilities.cha) - 10) / 2))} to hit. At will: ${pickMany(atWillPool, 3).join(', ')}. 3/day each: ${pickMany(dailyPool, 3).join(', ')}.`,
   };
+}
+
+function inferAffinity({ styleKey, type, origin, environmentList }) {
+  if (styleKey === 'aquatic' || environmentList.includes('underwater') || (environmentList.includes('coastal') && chance(0.7))) return 'aquatic';
+  if (styleKey === 'infernal' || origin === 'infernal' || environmentList.includes('volcanic')) return 'infernal';
+  if (styleKey === 'elemental' || origin === 'stormbound' || environmentList.includes('mountain')) return 'storm';
+  if (type === 'beast' || styleKey === 'balanced') return 'primal';
+  return styleKey;
 }
 
 function selectField(label, path, value, options) {
