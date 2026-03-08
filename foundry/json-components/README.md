@@ -20,3 +20,7 @@ These JSON files are reusable templates/schemas for common Foundry VTT component
 - `foundry-component-catalog.json`: index of all templates
 
 Use these as starting points for Foundry macros, importers, or data generation pipelines.
+
+## Additional report artifacts
+
+- `foundry-dnd5e-npc-export-report-continuation.md`: continuation report with medium/complex sample outputs and CI/integration guidance
