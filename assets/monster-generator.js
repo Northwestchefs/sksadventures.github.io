@@ -618,6 +618,17 @@ function applyPreset() {
 function randomFromCr() {
   const cr = document.getElementById('random-cr').value;
   const style = document.getElementById('random-style').value;
+  const randomSrdMonster = pickRandomSrdMonsterForCr(cr);
+
+  if (randomSrdMonster) {
+    monster = importSrdMonster(randomSrdMonster, monster);
+    syncSrdSelection(cr, randomSrdMonster);
+    setStatus(`Random SRD monster loaded for CR ${cr}: ${randomSrdMonster.name}.`);
+    renderForm();
+    renderPreview();
+    return;
+  }
+
   const generated = generateRandomMonster(cr, style);
   monster = {
     ...monster,
@@ -627,6 +638,21 @@ function randomFromCr() {
   setStatus(`Random ${RANDOM_STYLES[style] || 'custom'} monster generated for CR ${cr}: ${generated.identity.name}.`);
   renderForm();
   renderPreview();
+}
+
+function pickRandomSrdMonsterForCr(cr) {
+  const list = srdMonstersByCr[normalizeCrKey(cr)] || [];
+  if (!list.length) return null;
+  return pick(list);
+}
+
+function syncSrdSelection(cr, selectedMonster) {
+  const select = document.getElementById('srd-monster-select');
+  if (!select || !selectedMonster) return;
+
+  const list = srdMonstersByCr[normalizeCrKey(cr)] || [];
+  const selectedValue = selectedMonster.index || String(list.indexOf(selectedMonster));
+  select.value = selectedValue;
 }
 
 
