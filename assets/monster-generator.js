@@ -11,6 +11,11 @@ const MIN_EXPECTED_SRD_MONSTERS = 300;
 const SRD_FETCH_CONCURRENCY = 8;
 const SRD_FETCH_RETRIES = 2;
 const SRD_FETCH_RETRY_BASE_DELAY_MS = 250;
+const SRD_SPELL_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/spells';
+const SRD_SPELL_API_BASE = 'https://www.dnd5eapi.co';
+const SRD_SPELL_CACHE_KEY = 'sks-monster-generator-srd-spells-v1';
+const MIN_EXPECTED_SRD_SPELLS = 250;
+const SRD_SPELL_FETCH_CONCURRENCY = 10;
 
 const CR_BASELINES = {
   '0': { ac: 13, hpMin: 1, hpMax: 7, dprMin: 0, dprMax: 1 },
@@ -248,6 +253,9 @@ let monster = createDefaultMonster();
 let srdMonsters = [];
 let srdMonstersByCr = {};
 let srdLoadPromise = null;
+let srdSpells = [];
+let srdSpellsByLevel = {};
+let srdSpellLoadPromise = null;
 
 if (hasDocument && formEl && statusEl) {
   init();
@@ -321,6 +329,7 @@ function createDefaultMonster() {
 
 async function init() {
   await ensureSrdMonstersLoaded();
+  await ensureSrdSpellsLoaded();
   populateSelects();
   renderForm();
   renderPreview();
@@ -379,6 +388,7 @@ function renderForm() {
 
   formEl.querySelectorAll('[data-add]').forEach((btn) => btn.addEventListener('click', addEntry));
   formEl.querySelectorAll('[data-random-trait]').forEach((btn) => btn.addEventListener('click', addRandomTraitByCr));
+  formEl.querySelectorAll('[data-random-spell]').forEach((btn) => btn.addEventListener('click', addRandomSpellByCr));
   formEl.querySelectorAll('[data-del], [data-dup], [data-up], [data-down]').forEach((btn) => btn.addEventListener('click', mutateEntry));
 }
 
@@ -467,7 +477,10 @@ function repeatable(title, path, fields) {
   const randomTraitButton = path === 'combat.traits'
     ? `<button class="btn btn-secondary" type="button" data-random-trait="${path}">Random Trait</button>`
     : '';
-  sectionEl.innerHTML = `<h3>${title}</h3><div class="entry-list">${list.map((item, i) => entryHtml(path, i, fields, item)).join('')}</div><div class="entry-actions">${randomTraitButton}<button class="btn btn-secondary" type="button" data-add="${path}">Add ${title.slice(0, -1)}</button></div>`;
+  const randomSpellButton = path === 'combat.spellcasting'
+    ? `<button class="btn btn-secondary" type="button" data-random-spell="${path}">Random Spell (by CR)</button>`
+    : '';
+  sectionEl.innerHTML = `<h3>${title}</h3><div class="entry-list">${list.map((item, i) => entryHtml(path, i, fields, item)).join('')}</div><div class="entry-actions">${randomTraitButton}${randomSpellButton}<button class="btn btn-secondary" type="button" data-add="${path}">Add ${title.slice(0, -1)}</button></div>`;
   return sectionEl;
 }
 
@@ -611,6 +624,65 @@ function addRandomTraitByCr() {
   renderForm();
   renderPreview();
   setStatus(`Added CR ${cr} trait: ${nextTrait.name}.`);
+}
+
+async function addRandomSpellByCr() {
+  const cr = normalizeCrKey(monster?.identity?.cr || '1');
+  await ensureSrdSpellsLoaded();
+
+  if (!srdSpells.length) {
+    setStatus('No SRD spells are available yet. Try again in a moment.', true);
+    return;
+  }
+
+  const maxSpellLevel = getMaxSpellLevelForCr(cr);
+  const preferredLevels = [maxSpellLevel, maxSpellLevel - 1, maxSpellLevel - 2].filter((level) => level >= 0);
+  const fallbackLevels = Array.from({ length: maxSpellLevel + 1 }, (_, index) => index);
+  const eligibleSpells = preferredLevels.flatMap((level) => srdSpellsByLevel[level] || []);
+  const fallbackSpells = fallbackLevels.flatMap((level) => srdSpellsByLevel[level] || []);
+  const spellPool = eligibleSpells.length ? eligibleSpells : fallbackSpells;
+
+  if (!spellPool.length) {
+    setStatus(`No SRD spells available for CR ${cr} (max level ${maxSpellLevel}).`, true);
+    return;
+  }
+
+  const spellcastingEntries = Array.isArray(monster.combat?.spellcasting) ? monster.combat.spellcasting : [];
+  const existingSpellNames = new Set(spellcastingEntries.map((entry) => String(entry?.name || '').trim().toLowerCase()));
+  const uniquePool = spellPool.filter((spell) => !existingSpellNames.has(String(spell?.name || '').trim().toLowerCase()));
+  const spell = pick(uniquePool.length ? uniquePool : spellPool);
+  const schoolName = spell.school?.name || 'school unknown';
+  const shortDesc = normalizeSpellDescription(spell.desc);
+
+  spellcastingEntries.push({
+    name: spell.name || 'SRD Spell',
+    description: `CR ${cr} random spell (max level ${maxSpellLevel}): ${spell.name} (level ${spell.level}, ${schoolName}). ${shortDesc}`,
+  });
+
+  monster.combat.spellcasting = spellcastingEntries;
+  renderForm();
+  renderPreview();
+  setStatus(`Added random SRD spell for CR ${cr}: ${spell.name} (level ${spell.level}).`);
+}
+
+function normalizeSpellDescription(descriptionList) {
+  const firstParagraph = Array.isArray(descriptionList) && descriptionList.length ? String(descriptionList[0] || '') : '';
+  if (!firstParagraph) return 'No SRD spell description found.';
+  return firstParagraph.replace(/\s+/g, ' ').trim();
+}
+
+function getMaxSpellLevelForCr(cr) {
+  const numericCr = Number(parseCrToNumber(cr));
+  if (numericCr <= 0) return 0;
+  if (numericCr <= 1) return 1;
+  if (numericCr <= 4) return 2;
+  if (numericCr <= 7) return 3;
+  if (numericCr <= 10) return 4;
+  if (numericCr <= 13) return 5;
+  if (numericCr <= 16) return 6;
+  if (numericCr <= 18) return 7;
+  if (numericCr <= 19) return 8;
+  return 9;
 }
 
 function mutateEntry(event) {
@@ -2166,6 +2238,89 @@ async function fetchSrdMonsterDetailWithRetry(url) {
   }
 
   return null;
+}
+
+async function ensureSrdSpellsLoaded() {
+  if (srdSpells.length) return;
+  if (srdSpellLoadPromise) {
+    await srdSpellLoadPromise;
+    return;
+  }
+
+  srdSpellLoadPromise = (async () => {
+    const cached = readCachedSrdSpells();
+    if (cached.length >= MIN_EXPECTED_SRD_SPELLS) {
+      srdSpells = cached;
+      srdSpellsByLevel = groupSrdSpellsByLevel(cached);
+      return;
+    }
+
+    const fetched = await fetchSrdSpellsFromApi();
+    if (fetched.length) {
+      srdSpells = fetched;
+      srdSpellsByLevel = groupSrdSpellsByLevel(fetched);
+      writeCachedSrdSpells(fetched);
+      return;
+    }
+
+    if (cached.length) {
+      srdSpells = cached;
+      srdSpellsByLevel = groupSrdSpellsByLevel(cached);
+    }
+  })();
+
+  await srdSpellLoadPromise;
+  srdSpellLoadPromise = null;
+}
+
+function readCachedSrdSpells() {
+  if (!hasDocument || !window.localStorage) return [];
+  try {
+    const raw = window.localStorage.getItem(SRD_SPELL_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
+function writeCachedSrdSpells(list) {
+  if (!hasDocument || !window.localStorage) return;
+  try {
+    window.localStorage.setItem(SRD_SPELL_CACHE_KEY, JSON.stringify(list));
+  } catch {
+    // ignore write failures
+  }
+}
+
+function groupSrdSpellsByLevel(list) {
+  return arrayOrEmpty(list).reduce((acc, spell) => {
+    const level = Math.max(0, Math.floor(Number(spell.level) || 0));
+    if (!acc[level]) acc[level] = [];
+    acc[level].push(spell);
+    return acc;
+  }, {});
+}
+
+async function fetchSrdSpellsFromApi() {
+  try {
+    const listResponse = await fetch(SRD_SPELL_LIST_ENDPOINT);
+    if (!listResponse.ok) return [];
+
+    const listData = await listResponse.json();
+    const spells = Array.isArray(listData?.results) ? listData.results : [];
+    const details = await runWithConcurrency(spells, SRD_SPELL_FETCH_CONCURRENCY, async (entry) => {
+      const detail = await fetchSrdMonsterDetailWithRetry(`${SRD_SPELL_API_BASE}${entry.url}`);
+      if (detail) return detail;
+      return null;
+    });
+
+    return details.filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 async function runWithConcurrency(items, concurrency, task) {
