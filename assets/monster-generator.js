@@ -226,8 +226,17 @@ function populateSelects() {
   randomStyle.innerHTML = Object.entries(RANDOM_STYLES).map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
   randomStyle.value = 'balanced';
 
+  if (!hasSrdForCr(randomCr.value)) {
+    const firstAvailableCr = CR_OPTIONS.find((cr) => hasSrdForCr(cr));
+    if (firstAvailableCr) randomCr.value = firstAvailableCr;
+  }
+
   populateSrdMonsterSelect(randomCr.value);
   randomCr.addEventListener('change', () => populateSrdMonsterSelect(randomCr.value));
+}
+
+function hasSrdForCr(cr) {
+  return Boolean((srdMonstersByCr[normalizeCrKey(cr)] || []).length);
 }
 
 function renderForm() {
@@ -1229,8 +1238,16 @@ function arrayOrEmpty(value) {
 function normalizeCrKey(value) {
   const normalized = String(value).trim();
   if (CR_BASELINES[normalized]) return normalized;
+
   const n = Number(normalized);
   if (Number.isNaN(n)) return '1';
+
+  if (n > 0 && n < 1) {
+    if (n <= 0.125) return '1/8';
+    if (n <= 0.25) return '1/4';
+    return '1/2';
+  }
+
   if (n <= 0) return '0';
   return String(Math.min(20, Math.floor(n)));
 }
@@ -1251,7 +1268,7 @@ async function loadSrdMonsters() {
 
   const normalized = srdMonsters
     .map((entry) => normalizeSrdEntry(entry))
-    .filter((entry) => entry && entry.name && entry.challenge_rating);
+    .filter((entry) => entry && entry.name && entry.challenge_rating !== undefined && entry.challenge_rating !== null);
 
   const fallback = SRD_FALLBACK_MONSTERS.map((entry) => normalizeSrdEntry(entry));
   const merged = [...normalized];
