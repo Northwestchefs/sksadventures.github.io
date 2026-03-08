@@ -600,9 +600,21 @@ function renderStatblock() {
 
 function renderFeatureGroup(group) {
   const title = pretty(group);
-  const list = monster.combat[group] || [];
+  const list = dedupeFeatureEntries(monster.combat[group] || []);
   if (!list.length) return '';
   return `<h3>${title}</h3><ul>${list.map((entry) => `<li><strong>${entry.name || 'Untitled'}.</strong> ${entry.description || entry.hit || ''}${entry.trigger ? ` <em>Trigger:</em> ${entry.trigger}.` : ''}${entry.saveDc ? ` <em>Save:</em> ${entry.saveDc}.` : ''}${entry.usage ? ` <em>Usage:</em> ${entry.usage}.` : ''}${entry.recharge ? ` <em>Recharge:</em> ${entry.recharge}.` : ''}</li>`).join('')}</ul>`;
+}
+
+function dedupeFeatureEntries(entries) {
+  const seen = new Set();
+  return arrayOrEmpty(entries).filter((entry) => {
+    const key = `${String(entry?.name || '').trim().toLowerCase()}|${String(entry?.description || entry?.hit || '').trim().toLowerCase()}`;
+    if (!key || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 function renderCard() {
