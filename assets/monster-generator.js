@@ -7,6 +7,7 @@ const SRD_DATA_PATH = '../data/monsters.json';
 const SRD_MONSTER_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/monsters';
 const SRD_MONSTER_API_BASE = 'https://www.dnd5eapi.co';
 const SRD_CACHE_KEY = 'sks-monster-generator-srd-monsters-v1';
+const MIN_EXPECTED_SRD_MONSTERS = 300;
 
 const CR_BASELINES = {
   '0': { ac: 13, hpMin: 1, hpMax: 7, dprMin: 0, dprMax: 1 },
@@ -1260,48 +1261,68 @@ function getCrBaseline(cr) {
 }
 
 async function loadSrdMonsters() {
+  const combined = [];
+
   try {
     const response = await fetch(SRD_DATA_PATH);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const parsed = await response.json();
-    srdMonsters = Array.isArray(parsed) ? parsed : [];
+    if (Array.isArray(parsed)) combined.push(...parsed);
   } catch {
-    srdMonsters = [];
+    // Local data is optional because we can still hydrate from cache and API.
   }
 
-  if (!srdMonsters.length) {
+  let usedCache = false;
+  if (combined.length < MIN_EXPECTED_SRD_MONSTERS) {
     try {
       const cached = localStorage.getItem(SRD_CACHE_KEY);
       if (cached) {
         const parsedCached = JSON.parse(cached);
-        if (Array.isArray(parsedCached)) srdMonsters = parsedCached;
+        if (Array.isArray(parsedCached)) {
+          combined.push(...parsedCached);
+          usedCache = true;
+        }
       }
     } catch {
       localStorage.removeItem(SRD_CACHE_KEY);
     }
   }
 
-  if (!srdMonsters.length) {
+  if (combined.length < MIN_EXPECTED_SRD_MONSTERS) {
     try {
-      srdMonsters = await fetchSrdMonsterCatalog();
-      localStorage.setItem(SRD_CACHE_KEY, JSON.stringify(srdMonsters));
+      const fetched = await fetchSrdMonsterCatalog();
+      if (fetched.length) {
+        combined.push(...fetched);
+        localStorage.setItem(SRD_CACHE_KEY, JSON.stringify(fetched));
+      }
     } catch {
-      srdMonsters = [];
+      if (!usedCache) {
+        // We still keep whatever came from the local data file.
+      }
     }
   }
 
-  const normalized = srdMonsters
+  const normalized = combined
     .map((entry) => normalizeSrdEntry(entry))
     .filter((entry) => entry && entry.name && entry.challenge_rating !== undefined && entry.challenge_rating !== null);
 
   const fallback = SRD_FALLBACK_MONSTERS.map((entry) => normalizeSrdEntry(entry));
-  const merged = [...normalized];
+  const merged = mergeUniqueSrdMonsters(normalized);
   fallback.forEach((entry) => {
     if (!merged.some((candidate) => candidate.index === entry.index)) merged.push(entry);
   });
 
   srdMonsters = merged;
   srdMonstersByCr = groupSrdByCr(merged);
+}
+
+function mergeUniqueSrdMonsters(list) {
+  const unique = new Map();
+  list.forEach((entry) => {
+    const key = String(entry.index || entry.slug || entry.url || entry.name || '').toLowerCase().trim();
+    if (!key || !unique.has(key)) unique.set(key, entry);
+  });
+  return [...unique.values()];
 }
 
 async function fetchSrdMonsterCatalog() {
