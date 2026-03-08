@@ -1469,6 +1469,19 @@ function arrayOrEmpty(value) {
   return [];
 }
 
+function normalizeNamedList(value) {
+  return arrayOrEmpty(value)
+    .map((entry) => {
+      if (typeof entry === 'string') return entry.trim();
+      if (entry && typeof entry === 'object') {
+        if (typeof entry.name === 'string') return entry.name.trim();
+        if (typeof entry.index === 'string') return entry.index.replace(/-/g, ' ').trim();
+      }
+      return '';
+    })
+    .filter(Boolean);
+}
+
 function normalizeCrKey(value) {
   const normalized = String(value).trim();
   if (CR_BASELINES[normalized]) return normalized;
@@ -1704,10 +1717,10 @@ function importSrdMonster(srd, currentMonster) {
     },
     defense: {
       ...currentMonster.defense,
-      vulnerabilities: arrayOrEmpty(srd.damage_vulnerabilities),
-      resistances: arrayOrEmpty(srd.damage_resistances),
-      immunities: arrayOrEmpty(srd.damage_immunities),
-      conditionImmunities: arrayOrEmpty(srd.condition_immunities),
+      vulnerabilities: normalizeNamedList(srd.damage_vulnerabilities),
+      resistances: normalizeNamedList(srd.damage_resistances),
+      immunities: normalizeNamedList(srd.damage_immunities),
+      conditionImmunities: normalizeNamedList(srd.condition_immunities),
       senses: formatSrdSenses(srd.senses),
       languages: srd.languages || '',
       telepathy: srd.languages?.toLowerCase().includes('telepathy') ? 'Telepathy listed in languages' : '',
