@@ -148,6 +148,24 @@ const ORC_VARIANT_ACTION_LIBRARY = [
   { name: 'Blood Frenzy', description: 'The orc gains advantage on melee attack rolls and resistance to bludgeoning, piercing, and slashing damage until the start of its next turn.', recharge: '5-6' },
 ];
 
+const ORC_VARIANT_PROFILE_RULES = [
+  { tokens: ['archer', 'javelin-thrower', 'hunter', 'scout', 'tracker'], role: 'artillery', attacks: ['Raiders Javelin'], actions: ['Savage Rush'] },
+  { tokens: ['shaman', 'war priest', 'hexer', 'bonecaster', 'spirit caller', 'firecaller', 'necroshaman', 'witch doctor', 'doomcaller'], role: 'controller', attacks: ['Nightblade Strike'], actions: ['Hex Totem'] },
+  { tokens: ['drummer', 'standard-bearer', 'taskmaster', 'captain', 'chieftain', 'warlord'], role: 'support', attacks: ['Shieldbash'], actions: ['Warcry of the Horde', 'Drumbeat Advance'] },
+  { tokens: ['wolf rider', 'boar rider', 'skirmisher', 'raider', 'reaver', 'ambusher', 'stalker', 'nightblade', 'assassin'], role: 'skirmisher', attacks: ['Hooking Spear', 'Raiders Javelin', 'Nightblade Strike'], actions: ['Savage Rush', 'Crushing Follow-Through'] },
+  { tokens: ['shieldbearer', 'ironhide', 'blood guard', 'elite guard', 'veteran', 'champion', 'duelist'], role: 'defender', attacks: ['Shieldbash', 'Brutal Greataxe'], actions: ['Crushing Follow-Through'] },
+  { tokens: ['brute', 'brawler', 'berserker', 'ravager', 'marauder', 'bloodrager', 'executioner', 'demolisher', 'gatecrusher', 'butcher', 'flesh-eater', 'bonebreaker', 'war beast', 'storm orc', 'frost orc', 'ash orc'], role: 'brute', attacks: ['Brutal Greataxe', 'Bonebreaker Maul', 'Cleaving Chop', 'Skullsplitter'], actions: ['Blood Frenzy', 'Savage Rush'] },
+];
+
+const ORC_ROLE_DEFAULTS = {
+  brute: { attacks: ['Brutal Greataxe', 'Bonebreaker Maul', 'Cleaving Chop', 'Skullsplitter'], actions: ['Blood Frenzy', 'Savage Rush'] },
+  skirmisher: { attacks: ['Hooking Spear', 'Raiders Javelin', 'Nightblade Strike'], actions: ['Savage Rush', 'Crushing Follow-Through'] },
+  artillery: { attacks: ['Raiders Javelin', 'Hooking Spear'], actions: ['Savage Rush'] },
+  support: { attacks: ['Shieldbash', 'Brutal Greataxe'], actions: ['Warcry of the Horde', 'Drumbeat Advance'] },
+  controller: { attacks: ['Nightblade Strike', 'Hooking Spear'], actions: ['Hex Totem', 'Crushing Follow-Through'] },
+  defender: { attacks: ['Shieldbash', 'Brutal Greataxe'], actions: ['Crushing Follow-Through', 'Warcry of the Horde'] },
+};
+
 const STYLE_PROFILES = {
   balanced: { names: ['Riftclaw Predator', 'Moonfen Howler', 'Runic Bastion', 'Ashcoil Ravager', 'Stonevein Brute', 'Glasswing Manticore'], traits: ['Battle-hardened', 'Adaptive', 'Relentless'], actions: ['Crushing Advance', 'Tactical Feint', 'Break Formation'], flavor: ['Disciplined hunter', 'Ruin-forged enforcer', 'Territorial apex creature'] },
   horror: { names: ['Whispering Ossuary', 'Gloam-Eyed Collector', 'Pale Mire Widow', 'Hollow Choir Horror', 'Dread Lantern Wretch'], traits: ['Aura of Dread', 'Unnerving Presence', 'Body Horror'], actions: ['Devouring Scream', 'Harvest Memory', 'Grave Pull'], flavor: ['Feeds on fear', 'Stalks isolated prey', 'Turns battlefields into nightmares'] },
@@ -898,8 +916,6 @@ function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, 
     recharge: chance(0.3) ? '5-6' : '',
     multiattackGroup: chance(0.8) ? 'Multiattack' : '',
   };
-
-  return applyOrcVariantCustomization(generatedMonster);
 }
 
 function isOrcIdentity(identity = {}) {
@@ -911,8 +927,27 @@ function isOrcIdentity(identity = {}) {
   return race.includes('orc') || subrace.includes('orc') || type.includes('orc') || tags.includes('orc') || /^orc\b/.test(name);
 }
 
-function createOrcVariantAttack(baseAttack = {}) {
-  const template = pick(ORC_VARIANT_ATTACK_LIBRARY) || ORC_VARIANT_ATTACK_LIBRARY[0];
+function getOrcVariantProfile(variantName = '') {
+  const normalizedName = String(variantName || '').toLowerCase();
+  const profile = ORC_VARIANT_PROFILE_RULES.find((entry) => entry.tokens.some((token) => normalizedName.includes(token)));
+  return profile || { role: 'brute', attacks: [], actions: [] };
+}
+
+function pickAttackTemplateByName(name) {
+  return ORC_VARIANT_ATTACK_LIBRARY.find((entry) => entry.name === name) || null;
+}
+
+function pickActionTemplateByName(name) {
+  return ORC_VARIANT_ACTION_LIBRARY.find((entry) => entry.name === name) || null;
+}
+
+function getOrcRoleDefaults(role = 'brute') {
+  return ORC_ROLE_DEFAULTS[role] || ORC_ROLE_DEFAULTS.brute;
+}
+
+function createOrcVariantAttack(baseAttack = {}, preferredAttackNames = []) {
+  const preferredTemplates = preferredAttackNames.map((name) => pickAttackTemplateByName(name)).filter(Boolean);
+  const template = pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ATTACK_LIBRARY) || ORC_VARIANT_ATTACK_LIBRARY[0];
   const templateDamageType = String(template.damageType || 'slashing');
   const damage = String(baseAttack.damage || template.damage || '1d8+3');
   const secondaryDamage = String(baseAttack.secondaryDamage || '');
@@ -933,8 +968,9 @@ function createOrcVariantAttack(baseAttack = {}) {
   });
 }
 
-function createOrcVariantAction(baseAction = {}) {
-  const template = pick(ORC_VARIANT_ACTION_LIBRARY) || ORC_VARIANT_ACTION_LIBRARY[0];
+function createOrcVariantAction(baseAction = {}, preferredActionNames = []) {
+  const preferredTemplates = preferredActionNames.map((name) => pickActionTemplateByName(name)).filter(Boolean);
+  const template = pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ACTION_LIBRARY) || ORC_VARIANT_ACTION_LIBRARY[0];
   return normalizeCombatFeatureEntry({
     ...baseAction,
     name: template.name,
@@ -951,16 +987,20 @@ function applyOrcVariantCustomization(monsterData) {
   if (!isOrcIdentity(result.identity)) return result;
 
   const chosenName = pick(ORC_VARIANTS) || result.identity.name || 'Orc Warrior';
+  const profile = getOrcVariantProfile(chosenName);
+  const roleDefaults = getOrcRoleDefaults(profile.role);
+  const preferredAttacks = profile.attacks?.length ? profile.attacks : roleDefaults.attacks;
+  const preferredActions = profile.actions?.length ? profile.actions : roleDefaults.actions;
   const attackPool = arrayOrEmpty(result?.combat?.attacks);
   const actionPool = arrayOrEmpty(result?.combat?.actions);
 
   const updatedAttacks = attackPool.length
-    ? attackPool.map((attack, index) => (index < 2 ? createOrcVariantAttack(attack) : normalizeAttackEntry(attack)))
-    : [createOrcVariantAttack()];
+    ? attackPool.map((attack, index) => (index < 2 ? createOrcVariantAttack(attack, preferredAttacks) : normalizeAttackEntry(attack)))
+    : [createOrcVariantAttack({}, preferredAttacks)];
 
   const updatedActions = actionPool.length
-    ? actionPool.map((action, index) => (index < 2 ? createOrcVariantAction(action) : normalizeCombatFeatureEntry(action, 'Action')))
-    : [createOrcVariantAction()];
+    ? actionPool.map((action, index) => (index < 2 ? createOrcVariantAction(action, preferredActions) : normalizeCombatFeatureEntry(action, 'Action')))
+    : [createOrcVariantAction({}, preferredActions)];
 
   return {
     ...result,
@@ -969,8 +1009,8 @@ function applyOrcVariantCustomization(monsterData) {
       name: chosenName,
       subtitle: `${result.identity.size || 'Medium'} ${result.identity.type || 'humanoid'} (orc), ${result.identity.alignment || 'chaotic evil'}`,
       tags: mergeCsvValues(result.identity.tags, 'orc, horde, warband'),
-      role: result.identity.role || pick(['brute', 'skirmisher', 'defender', 'ambusher']),
-      ancestryRace: result.identity.ancestryRace || 'Half-Orc',
+      role: profile.role || result.identity.role || 'brute',
+      ancestryRace: 'Orc',
     },
     defense: {
       ...result.defense,
