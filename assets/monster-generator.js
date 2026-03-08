@@ -346,6 +346,7 @@ function createDefaultMonster() {
 
 async function init() {
   await ensureSrdMonstersLoaded();
+  await ensureSrdSpellsLoaded();
   populateSelects();
   renderForm();
   renderPreview();
