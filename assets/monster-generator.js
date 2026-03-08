@@ -974,75 +974,51 @@ function exportFoundryNpcJson() {
 }
 
 function convertMonsterToFoundryNpc(sourceMonster) {
-  const identityData = mapIdentityToNpcData(sourceMonster.identity, sourceMonster.flavor);
-  const coreData = mapCoreToNpcData(sourceMonster.core);
-  const defenseData = mapDefenseToNpcData(sourceMonster.defense);
-  const foundryItems = mapCombatToFoundryItems(sourceMonster.combat);
+  const actor = mapActorCore(sourceMonster);
+  actor.items = mapCombatToFoundryItems(sourceMonster.combat);
+  return actor;
+}
+
+function mapActorCore(sourceMonster = {}) {
+  const identityData = mapIdentityToNpcData(sourceMonster.identity || {}, sourceMonster.flavor || {});
+  const coreData = mapCoreToNpcData(sourceMonster.core || {});
+  const defenseData = mapDefenseToNpcData(sourceMonster.defense || {});
 
   return {
     name: identityData.name,
     type: 'npc',
     img: 'icons/svg/mystery-man.svg',
     system: {
-      details: {
-        type: {
-          value: identityData.creatureType,
-          subtype: identityData.subtype,
-          custom: identityData.tags,
-        },
-        alignment: identityData.alignment,
-        cr: identityData.cr,
-        biography: {
-          value: buildBiographyHtml(sourceMonster.flavor, sourceMonster.identity),
-        },
-      },
-      attributes: {
-        ac: { value: coreData.ac },
-        hp: {
-          value: coreData.hp,
-          max: coreData.hp,
-          formula: coreData.hitDice,
-        },
-        movement: coreData.movement,
-        init: { value: coreData.initiativeBonus },
-        prof: coreData.proficiencyBonus,
-        senses: defenseData.senses,
-      },
+      currency: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
       abilities: coreData.abilities,
+      bonuses: mapBonuses(),
       skills: defenseData.skills,
-      traits: {
-        di: { value: defenseData.damageImmunities },
-        dr: { value: defenseData.damageResistances },
-        dv: { value: defenseData.damageVulnerabilities },
-        ci: { value: defenseData.conditionImmunities },
-        languages: {
-          value: defenseData.languages,
-          custom: defenseData.telepathy || '',
-        },
-      },
-      bonuses: {
-        saves: defenseData.savingThrowBonusText,
-        check: '',
-      },
-      resources: {
-        passivePerception: coreData.passivePerception,
-      },
+      tools: {},
+      spells: mapSpells(),
+      attributes: mapAttributes(coreData, defenseData),
+      details: mapDetails(identityData, sourceMonster),
+      resources: mapResources(),
+      source: { revision: 1, rules: '2024', book: '', page: '', custom: '', license: '' },
+      traits: mapTraits(identityData, defenseData),
     },
-    items: foundryItems,
-    prototypeToken: {
-      name: identityData.name,
-      disposition: -1,
-      actorLink: false,
+    prototypeToken: mapPrototypeToken(identityData),
+    items: [],
+    effects: [],
+    folder: null,
+    flags: {},
+    _stats: {
+      systemId: 'dnd5e',
+      systemVersion: '5.2.x',
+      coreVersion: '13.0.0',
+      createdTime: null,
+      modifiedTime: null,
+      lastModifiedBy: null,
+      compendiumSource: null,
+      duplicateSource: null,
+      exportSource: null,
+      sort: 0,
     },
-    flags: {
-      sksMonsterStudio: {
-        sourceSchema: 'sks-monster-studio-v1',
-        role: identityData.role,
-        environment: identityData.environment,
-        origin: identityData.origin,
-        exportPath: 'convertMonsterToFoundryNpc',
-      },
-    },
+    ownership: { default: 0 },
   };
 }
 
@@ -1066,18 +1042,20 @@ function mapIdentityToNpcData(identity, flavor) {
 }
 
 function mapCoreToNpcData(core) {
+  const speed = core.speed || {};
   return {
     ac: Number(core.ac) || 10,
     hp: Number(core.hp) || 1,
     hitDice: core.hitDice || '',
     movement: {
-      walk: Number(core.speed.walk) || 0,
-      burrow: Number(core.speed.burrow) || 0,
-      climb: Number(core.speed.climb) || 0,
-      fly: Number(core.speed.fly) || 0,
-      swim: Number(core.speed.swim) || 0,
-      hover: Boolean(core.speed.hover),
+      walk: normalizeMovementValue(speed.walk),
+      burrow: normalizeMovementValue(speed.burrow),
+      climb: normalizeMovementValue(speed.climb),
+      fly: normalizeMovementValue(speed.fly),
+      swim: normalizeMovementValue(speed.swim),
+      hover: Boolean(speed.hover),
       units: 'ft',
+      ignoredDifficultTerrain: [],
     },
     initiativeBonus: Number(core.initiativeBonus) || 0,
     passivePerception: Number(core.passivePerception) || 10,
@@ -1087,104 +1065,173 @@ function mapCoreToNpcData(core) {
 }
 
 function mapDefenseToNpcData(defense) {
+  const defenseSenses = mapSensesToFoundry(defense.senses);
   return {
-    savingThrowBonusText: arrayOrEmpty(defense.savingThrows).join(', '),
     skills: mapSkillsToFoundry(defense.skills),
     damageVulnerabilities: arrayOrEmpty(defense.vulnerabilities),
     damageResistances: arrayOrEmpty(defense.resistances),
     damageImmunities: arrayOrEmpty(defense.immunities),
     conditionImmunities: arrayOrEmpty(defense.conditionImmunities),
-    senses: mapSensesToFoundry(defense.senses),
+    senses: defenseSenses,
     languages: arrayOrEmpty(defense.languages),
-    telepathy: defense.telepathy || '',
+    telepathy: defense.telepathy || defenseSenses.communication,
   };
 }
 
 function mapCombatToFoundryItems(combat = {}) {
-  return [
-    ...arrayOrEmpty(combat.traits).map((trait) => mapTraitToFeatureItem(trait, 'trait')),
-    ...arrayOrEmpty(combat.actions).map((action) => mapActionToFeatureItem(action)),
-    ...arrayOrEmpty(combat.bonusActions).map((action) => mapActionToFeatureItem(action, 'bonus')),
-    ...arrayOrEmpty(combat.reactions).map((reaction) => mapReactionToFeatureItem(reaction)),
-    ...arrayOrEmpty(combat.legendaryActions).map((entry) => mapTraitToFeatureItem(entry, 'legendary')),
-    ...arrayOrEmpty(combat.lairActions).map((entry) => mapTraitToFeatureItem(entry, 'lair')),
-    ...arrayOrEmpty(combat.mythic).map((entry) => mapTraitToFeatureItem(entry, 'mythic')),
-    ...arrayOrEmpty(combat.attacks).map((attack) => mapAttackToAttackItem(attack)),
-    ...arrayOrEmpty(combat.spellcasting).map((entry) => mapTraitToFeatureItem(entry, 'spellcasting')),
+  const items = [
+    ...arrayOrEmpty(combat.traits).map((trait) => mapFeatureItem(trait, 'special')),
+    ...arrayOrEmpty(combat.actions).map((action) => mapFeatureItem(action, 'action')),
+    ...arrayOrEmpty(combat.bonusActions).map((action) => mapFeatureItem(action, 'bonus')),
+    ...arrayOrEmpty(combat.reactions).map((reaction) => mapFeatureItem(reaction, 'reaction')),
+    ...arrayOrEmpty(combat.legendaryActions).map((entry) => mapFeatureItem(entry, 'special')),
+    ...arrayOrEmpty(combat.lairActions).map((entry) => mapFeatureItem(entry, 'special')),
+    ...arrayOrEmpty(combat.mythic).map((entry) => mapFeatureItem(entry, 'special')),
+    ...arrayOrEmpty(combat.attacks).map((attack) => mapAttackToFeatureItem(attack)),
+    ...arrayOrEmpty(combat.spellcasting).map((entry) => mapFeatureItem(entry, 'special')),
   ];
+  return items.filter(Boolean);
 }
 
-function mapTraitToFeatureItem(trait, activationType = 'special') {
+function mapFeatureItem(trait, activationType = 'special') {
+  const description = buildCombatDescription(trait);
   return {
+    _id: buildFoundryId(trait.name || `${activationType}-feature`),
     name: trait.name || 'Unnamed Feature',
     type: 'feat',
+    img: 'icons/svg/lightning.svg',
     system: {
-      description: {
-        value: buildCombatDescription(trait),
-      },
-      type: {
-        value: 'monster',
-      },
-      activation: {
-        type: activationType,
-        cost: 1,
-      },
-      uses: {
-        value: '',
-        max: trait.usage || '',
-      },
-      recharge: {
-        value: trait.recharge || '',
-      },
+      description: { value: description, chat: '' },
+      activities: mapActivityUtility(description, activationType),
+      uses: { spent: 0, recovery: [], max: '' },
+      identifier: '',
+      properties: [],
+      source: { revision: 1, rules: '2024' },
+      type: { value: 'monster', subtype: '', custom: '' },
     },
-    flags: {
-      sksMonsterStudio: {
-        sourceCategory: trait.category || activationType,
-      },
-    },
+    effects: [],
+    folder: null,
+    flags: {},
+    sort: 0,
+    ownership: { default: 0 },
   };
 }
 
-function mapActionToFeatureItem(action, activationType = 'action') {
-  return mapTraitToFeatureItem(action, activationType);
-}
-
-function mapReactionToFeatureItem(reaction) {
-  return mapTraitToFeatureItem(reaction, 'reaction');
-}
-
-function mapAttackToAttackItem(attack) {
+function mapAttackToFeatureItem(attack = {}) {
+  const description = buildAttackDescription(attack);
+  const activity = mapActivityAttack(attack);
   return {
+    _id: buildFoundryId(attack.name || 'attack'),
     name: attack.name || 'Unnamed Attack',
-    type: 'weapon',
+    type: 'feat',
+    img: 'icons/svg/sword.svg',
     system: {
-      description: {
-        value: buildAttackDescription(attack),
-      },
-      activation: {
-        type: 'action',
-        cost: 1,
-      },
-      actionType: attack.kind?.toLowerCase().includes('ranged') ? 'rwak' : 'mwak',
-      attackBonus: parseSignedNumber(attack.toHit),
-      range: {
-        value: parseAttackRange(attack.range),
-        long: parseAttackLongRange(attack.range),
-        units: 'ft',
-      },
-      damage: {
-        parts: buildDamageParts(attack),
-      },
-      proficient: true,
-      equipped: true,
+      description: { value: description, chat: '' },
+      activities: activity ? { [activity.id]: activity.data } : {},
+      uses: { spent: 0, recovery: [], max: '' },
+      identifier: '',
+      properties: [],
+      source: { revision: 1, rules: '2024' },
+      type: { value: 'monster', subtype: '', custom: '' },
     },
-    flags: {
-      sksMonsterStudio: {
-        sourceCategory: 'attack',
-        multiattackGroup: attack.multiattackGroup || '',
-        styleNote: attack.styleNote || '',
-      },
-    },
+    effects: [],
+    folder: null,
+    flags: {},
+    sort: 0,
+    ownership: { default: 0 },
+  };
+}
+
+function mapBonuses() {
+  return {
+    mwak: { attack: '', damage: '' }, rwak: { attack: '', damage: '' },
+    msak: { attack: '', damage: '' }, rsak: { attack: '', damage: '' },
+    abilities: { check: '', save: '', skill: '' }, spell: { dc: '' },
+  };
+}
+
+function mapSpells() {
+  return {
+    spell1: { value: 0, override: null }, spell2: { value: 0, override: null }, spell3: { value: 0, override: null },
+    spell4: { value: 0, override: null }, spell5: { value: 0, override: null }, spell6: { value: 0, override: null },
+    spell7: { value: 0, override: null }, spell8: { value: 0, override: null }, spell9: { value: 0, override: null },
+    pact: { value: 0, override: null },
+  };
+}
+
+function mapAttributes(coreData, defenseData) {
+  return {
+    ac: { calc: 'default', flat: coreData.ac },
+    hp: { value: coreData.hp, max: coreData.hp, formula: coreData.hitDice, temp: null, tempmax: null },
+    senses: defenseData.senses,
+    movement: coreData.movement,
+    init: { ability: '', roll: { min: null, max: null, mode: 0 }, bonus: coreData.initiativeBonus ? String(coreData.initiativeBonus) : '' },
+    attunement: { max: 3 },
+    spellcasting: '', exhaustion: 0,
+    concentration: { ability: '', roll: { min: null, max: null, mode: 0 }, bonuses: { save: '' }, limit: 1 },
+    loyalty: {}, hd: { spent: 0 },
+    death: { roll: { min: null, max: null, mode: 0 }, success: 0, failure: 0, bonuses: { save: '' } },
+    spell: { level: 0 },
+    price: { value: null, denomination: 'gp' },
+  };
+}
+
+function mapDetails(identityData, sourceMonster) {
+  return {
+    biography: { value: buildBiographyHtml(sourceMonster.flavor, sourceMonster.identity), public: '' },
+    alignment: identityData.alignment,
+    ideal: '', bond: '', flaw: '', race: null,
+    type: { value: identityData.creatureType, subtype: identityData.subtype, swarm: '', custom: identityData.tags },
+    cr: Number(identityData.cr) || crToNumber(String(identityData.cr || 0)),
+    habitat: { value: [], custom: '' },
+    treasure: { value: [] },
+  };
+}
+
+function mapResources() {
+  return {
+    legact: { max: 0, spent: 0 },
+    legres: { max: 0, spent: 0 },
+    lair: { value: false, initiative: null, inside: false },
+  };
+}
+
+function mapTraits(identityData, defenseData) {
+  return {
+    languages: { value: defenseData.languages, custom: defenseData.telepathy || '', communication: {} },
+    size: mapSizeToFoundry(identityData.size),
+    di: { value: defenseData.damageImmunities, custom: '', bypasses: [] },
+    dr: { value: defenseData.damageResistances, custom: '', bypasses: [] },
+    dv: { value: defenseData.damageVulnerabilities, custom: '', bypasses: [] },
+    dm: { amount: {}, bypasses: [] },
+    ci: { value: defenseData.conditionImmunities, custom: '' },
+    important: false,
+  };
+}
+
+function mapPrototypeToken(identityData) {
+  const size = mapTokenSize(identityData.size);
+  return {
+    name: identityData.name,
+    displayName: 20,
+    actorLink: false,
+    width: size,
+    height: size,
+    texture: { src: 'icons/svg/mystery-man.svg', anchorX: 0.5, anchorY: 0.5, fit: 'contain', alphaThreshold: 0.75, scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0, rotation: 0, tint: null },
+    hexagonalShape: 0,
+    lockRotation: false,
+    rotation: 0,
+    alpha: 1,
+    disposition: -1,
+    displayBars: 20,
+    bar1: { attribute: 'attributes.hp' },
+    bar2: { attribute: null },
+    light: { dim: 0, bright: 0, angle: 360, alpha: 0.5, coloration: 1, luminosity: 0.5, attenuation: 0.5, saturation: 0, contrast: 0, shadows: 0, animation: { type: null, speed: 5, intensity: 5, reverse: false }, darkness: { min: 0, max: 1 } },
+    sight: { enabled: false, range: 0, angle: 360, visionMode: 'basic', color: null, attenuation: 0.1, brightness: 0, saturation: 0, contrast: 0 },
+    detectionModes: [],
+    occludable: { radius: 0 },
+    ring: { enabled: false, colors: { ring: null, background: null }, effects: 1, subject: { texture: null, scale: 1 } },
+    randomImg: false,
   };
 }
 
@@ -1233,8 +1280,11 @@ function mapAbilityScores(abilities = {}) {
     const score = Number(abilities[key]) || 10;
     acc[key] = {
       value: score,
-      mod: Math.floor((score - 10) / 2),
+      max: null,
       proficient: 0,
+      bonuses: { check: '', save: '' },
+      check: { roll: { min: null, max: null, mode: 0 } },
+      save: { roll: { min: null, max: null, mode: 0 } },
     };
     return acc;
   }, {});
@@ -1247,7 +1297,17 @@ function mapSkillsToFoundry(skills = []) {
     nature: 'nat', perception: 'prc', performance: 'prf', persuasion: 'per', religion: 'rel',
     sleightofhand: 'slt', stealth: 'ste', survival: 'sur',
   };
-  const result = {};
+  const defaultSkills = {
+    acr: 'dex', ani: 'wis', arc: 'int', ath: 'str', dec: 'cha', his: 'int', ins: 'wis', itm: 'cha', inv: 'int', med: 'wis',
+    nat: 'int', prc: 'wis', prf: 'cha', per: 'cha', rel: 'int', slt: 'dex', ste: 'dex', sur: 'wis',
+  };
+  const result = Object.fromEntries(Object.entries(defaultSkills).map(([key, ability]) => ([key, {
+    ability,
+    roll: { min: null, max: null, mode: 0 },
+    value: 0,
+    bonuses: { check: '', passive: '' },
+  }])));
+
   arrayOrEmpty(skills).forEach((entry) => {
     const nameMatch = String(entry).trim().match(/^[A-Za-z ]+/);
     const bonusMatch = String(entry).match(/([+-]\d+)$/);
@@ -1255,28 +1315,106 @@ function mapSkillsToFoundry(skills = []) {
     const key = nameMatch[0].toLowerCase().replaceAll(' ', '');
     const foundryKey = skillMap[key];
     if (!foundryKey) return;
-    result[foundryKey] = {
-      value: 1,
-      bonus: bonusMatch ? bonusMatch[1] : '',
-    };
+    result[foundryKey].value = 1;
+    result[foundryKey].bonuses.check = bonusMatch ? bonusMatch[1] : '';
   });
   return result;
 }
 
 function mapSensesToFoundry(senses = []) {
-  const mapped = {};
+  const mapped = {
+    darkvision: null,
+    blindsight: null,
+    tremorsense: null,
+    truesight: null,
+    units: 'ft',
+    special: '',
+    communication: '',
+  };
   arrayOrEmpty(senses).forEach((sense) => {
     const normalized = String(sense).toLowerCase();
-    if (normalized.includes('darkvision')) mapped.darkvision = 60;
-    if (normalized.includes('blindsight')) mapped.blindsight = 30;
-    if (normalized.includes('tremorsense')) mapped.tremorsense = 30;
-    if (normalized.includes('truesight')) mapped.truesight = 30;
+    const range = parseAttackRange(normalized);
+    if (normalized.includes('darkvision')) mapped.darkvision = range;
+    if (normalized.includes('blindsight')) mapped.blindsight = range;
+    if (normalized.includes('tremorsense')) mapped.tremorsense = range;
+    if (normalized.includes('truesight')) mapped.truesight = range;
+    if (normalized.includes('telepathy')) mapped.communication = String(sense).trim();
   });
+  mapped.special = arrayOrEmpty(senses).join(', ');
+  return mapped;
+}
+
+function mapActivityUtility(description, activationType = 'special') {
+  if (!description) return {};
+  const activityId = buildFoundryId(`${activationType}-utility`);
   return {
-    ...mapped,
-    units: 'ft',
-    special: arrayOrEmpty(senses).join(', '),
+    [activityId]: {
+      type: 'utility',
+      activation: { type: activationType, value: 1, condition: '' },
+      consumption: { targets: [], scaling: { allowed: false, max: '' } },
+      description: { chatFlavor: '' },
+      duration: { units: 'inst', concentration: false, value: '' },
+      effects: [],
+      range: { units: 'self', special: '', value: null },
+      target: { template: { contiguous: false, count: '', type: '', size: '', width: '', height: '', units: 'ft' }, affects: { choice: false, count: '', type: '', special: '' }, prompt: true, override: false },
+      uses: { spent: 0, max: '', recovery: [] },
+      sort: 0,
+      _id: activityId,
+    },
   };
+}
+
+function mapActivityAttack(attack = {}) {
+  const hasToHit = /[+-]?\d+/.test(String(attack.toHit || ''));
+  const hasDamage = buildDamageParts(attack).length > 0;
+  if (!hasToHit && !hasDamage) return null;
+  const id = buildFoundryId(`${attack.name || 'attack'}-activity`);
+  return {
+    id,
+    data: {
+      _id: id,
+      type: 'attack',
+      activation: { type: 'action', value: 1, condition: '' },
+      attack: {
+        type: attack.kind?.toLowerCase().includes('ranged') ? { value: 'ranged', classification: 'weapon' } : { value: 'melee', classification: 'weapon' },
+        ability: '',
+        bonus: hasToHit ? String(parseSignedNumber(attack.toHit)) : '',
+        critical: { threshold: null },
+        flat: false,
+      },
+      consumption: { targets: [], scaling: { allowed: false, max: '' } },
+      damage: {
+        includeBase: true,
+        parts: buildDamageParts(attack).map(([number, type]) => ({ number, denomination: 0, bonus: '', types: [type], custom: { enabled: false, formula: '' }, scaling: { mode: '', number: null, formula: '' } })),
+      },
+      description: { chatFlavor: '' },
+      duration: { units: 'inst', concentration: false, value: '' },
+      effects: [],
+      range: { value: parseAttackRange(attack.range), long: parseAttackLongRange(attack.range), units: 'ft', special: '' },
+      target: { template: { contiguous: false, count: '', type: '', size: '', width: '', height: '', units: 'ft' }, affects: { choice: false, count: '1', type: 'creature', special: '' }, prompt: true, override: false },
+      uses: { spent: 0, max: '', recovery: [] },
+      sort: 0,
+    },
+  };
+}
+
+function mapSizeToFoundry(size) {
+  const map = { tiny: 'tiny', small: 'sm', medium: 'med', large: 'lg', huge: 'huge', gargantuan: 'grg' };
+  return map[String(size || '').toLowerCase()] || 'med';
+}
+
+function mapTokenSize(size) {
+  const map = { tiny: 1, small: 1, medium: 1, large: 2, huge: 3, gargantuan: 4 };
+  return map[String(size || '').toLowerCase()] || 1;
+}
+
+function normalizeMovementValue(value) {
+  const n = parseAttackRange(String(value || ''));
+  return n ? String(n) : null;
+}
+
+function buildFoundryId(seed = '') {
+  return String(seed).toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 16).padEnd(16, '0');
 }
 
 function buildCombatDescription(entry) {
