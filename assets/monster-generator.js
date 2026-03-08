@@ -413,7 +413,7 @@ function repeatable(title, path, fields) {
   const sectionEl = document.createElement('section');
   const list = getByPath(monster, path) || [];
   const randomTraitButton = path === 'combat.traits'
-    ? `<button class="btn btn-secondary" type="button" data-random-trait="${path}">Random Trait (CR)</button>`
+    ? `<button class="btn btn-secondary" type="button" data-random-trait="${path}">Random Trait</button>`
     : '';
   sectionEl.innerHTML = `<h3>${title}</h3><div class="entry-list">${list.map((item, i) => entryHtml(path, i, fields, item)).join('')}</div><div class="entry-actions">${randomTraitButton}<button class="btn btn-secondary" type="button" data-add="${path}">Add ${title.slice(0, -1)}</button></div>`;
   return sectionEl;
@@ -973,7 +973,7 @@ function buildCrTraitPool(crKey, sourceMonster = {}) {
       results.push(normalizeCombatFeatureEntry({
         name: traitName,
         category: 'Trait',
-        description: `${name} (${type}) at CR ${normalizedCr} ${template.effect}. ${scaleText}`.trim(),
+        description: `${name} (${type}) ${template.effect}. ${scaleText}`.trim(),
         saveDc: template.scalesWith === 'saveDc' ? `${saveDc}` : '',
         recharge: template.kind === 'counter' || template.kind === 'zone' ? '5-6' : '',
         usage: template.scalesWith === 'usage' ? `${Math.max(1, Math.ceil(proficiencyBonus / 2))}/round` : '',
