@@ -2,29 +2,72 @@
   "name": "Basilisk",
   "type": "npc",
   "img": "icons/svg/mystery-man.svg",
-  "folder": "<actor-folder-id>",
   "system": {
-    "details": {
-      "cr": 3
+    "abilities": {
+      "str": { "value": 16 },
+      "dex": { "value": 8 },
+      "con": { "value": 15 },
+      "int": { "value": 2 },
+      "wis": { "value": 8 },
+      "cha": { "value": 7 }
     },
     "attributes": {
+      "ac": { "value": 15 },
       "hp": {
-        "value": 95,
-        "max": 95
+        "value": 52,
+        "max": 52,
+        "formula": "8d8 + 16"
       },
-      "ac": {
-        "value": 14
+      "init": { "value": -1 },
+      "movement": {
+        "walk": "20",
+        "units": "ft"
       },
-      "init": {
-        "value": 2
+      "senses": {
+        "darkvision": 60,
+        "units": "ft",
+        "special": ""
+      }
+    },
+    "details": {
+      "alignment": "Unaligned",
+      "cr": 3,
+      "type": {
+        "value": "monstrosity",
+        "subtype": "",
+        "swarm": "",
+        "custom": ""
+      },
+      "biography": {
+        "value": "",
+        "public": ""
+      }
+    },
+    "traits": {
+      "size": "med",
+      "languages": {
+        "value": [],
+        "custom": ""
       }
     }
   },
   "prototypeToken": {
     "name": "Basilisk",
+    "texture": {
+      "src": "icons/svg/mystery-man.svg"
+    },
+    "width": 1,
+    "height": 1,
     "disposition": -1,
     "actorLink": false,
     "randomImg": false
+  },
+  "items": [],
+  "effects": [],
+  "folder": null,
+  "sort": 0,
+  "ownership": {
+    "default": 0
   },
   "flags": {
     "sks": {
