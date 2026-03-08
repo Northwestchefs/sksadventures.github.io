@@ -545,7 +545,43 @@ function applyPreset() {
   const key = document.getElementById('preset-select').value;
   const preset = PRESETS[key];
   if (!preset) return;
-  monster = { ...createDefaultMonster(), ...monster, identity: { ...monster.identity, name: preset.name, subtitle: preset.subtitle, role: preset.role, cr: preset.cr, environment: preset.environment, origin: preset.origin }, core: { ...monster.core, ac: preset.ac, hp: preset.hp, abilities: preset.abilities || monster.core.abilities, speed: { ...monster.core.speed, ...(preset.speed || {}) } }, defense: { ...monster.defense, resistances: preset.resistances || monster.defense.resistances, immunities: preset.immunities || monster.defense.immunities, conditionImmunities: preset.conditionImmunities || monster.defense.conditionImmunities }, combat: { ...monster.combat, attacks: preset.attacks || monster.combat.attacks, spellcasting: preset.spellcasting || monster.combat.spellcasting, actions: preset.actions || monster.combat.actions } };
+  const defaultMonster = createDefaultMonster();
+  monster = {
+    ...defaultMonster,
+    ...monster,
+    identity: {
+      ...monster.identity,
+      name: preset.name,
+      subtitle: preset.subtitle,
+      role: preset.role,
+      cr: preset.cr,
+      environment: preset.environment,
+      origin: preset.origin,
+    },
+    core: {
+      ...monster.core,
+      ac: preset.ac,
+      hp: preset.hp,
+      abilities: preset.abilities || monster.core.abilities,
+      speed: { ...monster.core.speed, ...(preset.speed || {}) },
+    },
+    defense: {
+      ...monster.defense,
+      resistances: preset.resistances || monster.defense.resistances,
+      immunities: preset.immunities || monster.defense.immunities,
+      conditionImmunities: preset.conditionImmunities || monster.defense.conditionImmunities,
+    },
+    combat: {
+      ...monster.combat,
+      attacks: preset.attacks || monster.combat.attacks,
+      spellcasting: preset.spellcasting || monster.combat.spellcasting,
+      actions: preset.actions || monster.combat.actions,
+    },
+    flavor: {
+      ...defaultMonster.flavor,
+      ...(preset.flavor || {}),
+    },
+  };
   renderForm();
   renderPreview();
   setStatus(`Preset loaded: ${key}.`);
@@ -1670,6 +1706,7 @@ function loadSelectedSrdMonster() {
 }
 
 function importSrdMonster(srd, currentMonster) {
+  const defaultMonster = createDefaultMonster();
   const subtitleSubtype = srd.subtype ? ` (${srd.subtype})` : '';
   const subtitle = `${srd.size || 'Medium'} ${srd.type || 'monstrosity'}${subtitleSubtype}, ${srd.alignment || 'unaligned'}`;
   const movement = normalizeSrdSpeed(srd.speed);
@@ -1742,14 +1779,14 @@ function importSrdMonster(srd, currentMonster) {
       spellcasting: mapSrdSpellcasting(srd.special_abilities),
     },
     flavor: {
-      ...currentMonster.flavor,
+      ...defaultMonster.flavor,
       summary: `${srd.name} imported from SRD data and ready for tuning in the studio.`,
       appearance: `${srd.name} is a ${srd.size || 'Medium'} ${srd.type || 'creature'}${subtitleSubtype} with AC ${parseArmorClass(srd.armor_class) || currentMonster.core.ac}.`,
       behavior: `Tends toward ${srd.alignment || 'unpredictable'} behavior and usually fights in direct, efficient patterns.`,
       tactics: actionNames.length
         ? `Opens with ${actionNames.slice(0, 2).join(' and ')}${actionNames.length > 2 ? ', then adapts with remaining actions.' : '.'}`
         : 'Uses straightforward attacks and focuses exposed targets first.',
-      habitat: inferredHabitat || currentMonster.flavor.habitat,
+      habitat: inferredHabitat || defaultMonster.flavor.habitat,
       encounterIdeas: `Use as a CR ${normalizeCrKey(srd.challenge_rating || currentMonster.identity.cr)} encounter anchor with terrain that supports ${srd.type || 'its'} strengths.`,
       loot: `Theme loot around ${srd.type || 'monster'} traits, plus a trophy tied to ${srd.name}.`,
       gmNotes: 'Review action economy, recharge cadence, and encounter role before finalizing this import.',
