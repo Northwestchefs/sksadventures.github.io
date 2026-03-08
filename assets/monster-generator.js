@@ -8,6 +8,9 @@ const SRD_MONSTER_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/monsters';
 const SRD_MONSTER_API_BASE = 'https://www.dnd5eapi.co';
 const SRD_CACHE_KEY = 'sks-monster-generator-srd-monsters-v1';
 const MIN_EXPECTED_SRD_MONSTERS = 300;
+const SRD_FETCH_CONCURRENCY = 8;
+const SRD_FETCH_RETRIES = 2;
+const SRD_FETCH_RETRY_BASE_DELAY_MS = 250;
 
 const CR_BASELINES = {
   '0': { ac: 13, hpMin: 1, hpMax: 7, dprMin: 0, dprMax: 1 },
@@ -1421,17 +1424,56 @@ async function fetchSrdMonsterCatalog() {
   const listData = await listResponse.json();
   const monsters = Array.isArray(listData?.results) ? listData.results : [];
 
-  const details = await Promise.all(monsters.map(async (entry) => {
-    try {
-      const detailResponse = await fetch(`${SRD_MONSTER_API_BASE}${entry.url}`);
-      if (!detailResponse.ok) return null;
-      return await detailResponse.json();
-    } catch {
-      return null;
-    }
-  }));
+  const details = await runWithConcurrency(monsters, SRD_FETCH_CONCURRENCY, async (entry) => {
+    const detail = await fetchSrdMonsterDetailWithRetry(`${SRD_MONSTER_API_BASE}${entry.url}`);
+    if (detail) return detail;
+
+    return {
+      ...entry,
+      challenge_rating: normalizeCrKey(entry.challenge_rating ?? entry.cr ?? '1'),
+    };
+  });
 
   return details.filter(Boolean);
+}
+
+async function fetchSrdMonsterDetailWithRetry(url) {
+  for (let attempt = 0; attempt <= SRD_FETCH_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return await response.json();
+      if (response.status !== 429 || attempt === SRD_FETCH_RETRIES) return null;
+    } catch {
+      if (attempt === SRD_FETCH_RETRIES) return null;
+    }
+
+    await wait(SRD_FETCH_RETRY_BASE_DELAY_MS * 2 ** attempt);
+  }
+
+  return null;
+}
+
+async function runWithConcurrency(items, concurrency, task) {
+  if (!Array.isArray(items) || !items.length) return [];
+  const normalizedConcurrency = Math.max(1, Math.floor(Number(concurrency) || 1));
+  const results = new Array(items.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await task(items[index], index);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(normalizedConcurrency, items.length) }, () => worker());
+  await Promise.all(workers);
+  return results;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function groupSrdByCr(list) {
