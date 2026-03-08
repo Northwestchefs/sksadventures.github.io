@@ -53,6 +53,23 @@ const SRD_FALLBACK_MONSTERS = [
   { name: 'Lich', index: 'lich', challenge_rating: '21', size: 'Medium', type: 'undead', subtype: '', alignment: 'any evil alignment', armor_class: 17, hit_points: 135, hit_dice: '18d8 + 54', speed: { walk: '30 ft.' }, strength: 11, dexterity: 16, constitution: 16, intelligence: 20, wisdom: 14, charisma: 16, languages: 'Common plus up to five other languages', senses: { truesight: '120 ft.', passive_perception: 12 }, actions: [{ name: 'Paralyzing Touch', attack_bonus: 12, desc: 'Melee Spell Attack: +12 to hit, reach 5 ft., one creature. Hit: 10 (3d6) cold damage.' }] },
 ];
 
+
+
+const SRD_FALLBACK_SPELLS = [
+  { index: 'acid-splash', name: 'Acid Splash', level: 0, school: { name: 'Conjuration' }, desc: ['You hurl a bubble of acid that deals acid damage.'] },
+  { index: 'fire-bolt', name: 'Fire Bolt', level: 0, school: { name: 'Evocation' }, desc: ['You hurl a mote of fire that deals fire damage.'] },
+  { index: 'magic-missile', name: 'Magic Missile', level: 1, school: { name: 'Evocation' }, desc: ['You create three glowing darts of magical force.'] },
+  { index: 'shield', name: 'Shield', level: 1, school: { name: 'Abjuration' }, desc: ['An invisible barrier gives you temporary protection.'] },
+  { index: 'scorching-ray', name: 'Scorching Ray', level: 2, school: { name: 'Evocation' }, desc: ['You create three rays of fire and hurl them at targets.'] },
+  { index: 'counterspell', name: 'Counterspell', level: 3, school: { name: 'Abjuration' }, desc: ['You attempt to interrupt a creature in the process of casting a spell.'] },
+  { index: 'fireball', name: 'Fireball', level: 3, school: { name: 'Evocation' }, desc: ['A bright streak flashes to a point and explodes with fire.'] },
+  { index: 'blight', name: 'Blight', level: 4, school: { name: 'Necromancy' }, desc: ['Necromantic energy washes over a creature, draining moisture and vitality.'] },
+  { index: 'cone-of-cold', name: 'Cone of Cold', level: 5, school: { name: 'Evocation' }, desc: ['A blast of cold air erupts from your hands.'] },
+  { index: 'disintegrate', name: 'Disintegrate', level: 6, school: { name: 'Transmutation' }, desc: ['A thin green ray can reduce a creature or object to dust.'] },
+  { index: 'finger-of-death', name: 'Finger of Death', level: 7, school: { name: 'Necromancy' }, desc: ['You send negative energy through a creature, causing severe necrotic damage.'] },
+  { index: 'feeblemind', name: 'Feeblemind', level: 8, school: { name: 'Enchantment' }, desc: ['You blast the mind of a creature, crushing intellect and personality.'] },
+  { index: 'meteor-swarm', name: 'Meteor Swarm', level: 9, school: { name: 'Evocation' }, desc: ['Blazing orbs crash to the ground and erupt into devastating explosions.'] },
+];
 const FOUNDATION_FLAGS = {
   foundryHint: {
     actorType: 'npc',
@@ -347,6 +364,8 @@ async function init() {
   document.getElementById('export-json').addEventListener('click', exportJson);
   document.getElementById('export-foundry-json').addEventListener('click', exportFoundryNpcJson);
   document.getElementById('import-json').addEventListener('change', importJson);
+
+  ensureSrdSpellsLoaded();
 }
 
 function populateSelects() {
@@ -2271,6 +2290,11 @@ async function ensureSrdSpellsLoaded() {
 
   await srdSpellLoadPromise;
   srdSpellLoadPromise = null;
+
+  if (!srdSpells.length) {
+    srdSpells = [...SRD_FALLBACK_SPELLS];
+    srdSpellsByLevel = groupSrdSpellsByLevel(srdSpells);
+  }
 }
 
 function readCachedSrdSpells() {
