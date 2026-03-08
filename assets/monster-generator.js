@@ -116,6 +116,56 @@ const SRD_RACES = [
 ];
 const SRD_RACE_OPTIONS = ['—', ...SRD_RACES.map((entry) => entry.race)];
 
+const ORC_VARIANTS = [
+  'Orc Brawler', 'Orc Warrior', 'Orc Brute', 'Orc Berserker', 'Orc Raider', 'Orc Reaver', 'Orc Skirmisher', 'Orc Hunter', 'Orc Tracker',
+  'Orc Scout', 'Orc Archer', 'Orc Javelin-Thrower', 'Orc Spearfighter', 'Orc Axeman', 'Orc Shieldbearer', 'Orc Duelist', 'Orc Ravager',
+  'Orc Marauder', 'Orc Bloodrager', 'Orc Champion', 'Orc Warlord', 'Orc Chieftain', 'Orc Captain', 'Orc Taskmaster', 'Orc Beastmaster',
+  'Orc Wolf Rider', 'Orc Boar Rider', 'Orc Drummer', 'Orc Standard-Bearer', 'Orc Shaman', 'Orc War Priest', 'Orc Hexer', 'Orc Bonecaster',
+  'Orc Spirit Caller', 'Orc Firecaller', 'Orc Necroshaman', 'Orc Witch Doctor', 'Orc Assassin', 'Orc Ambusher', 'Orc Stalker',
+  'Orc Nightblade', 'Orc Executioner', 'Orc Torturer', 'Orc Siege Breaker', 'Orc Demolisher', 'Orc Gatecrusher', 'Orc Slaver',
+  'Orc Pillager', 'Orc Butcher', 'Orc Flesh-Eater', 'Orc Blood Guard', 'Orc Ironhide', 'Orc Doomcaller', 'Orc Skullcrusher', 'Orc War Beast',
+  'Orc Elite Guard', 'Orc Veteran', 'Orc Youngblood', 'Orc Outcast', 'Orc Exile', 'Orc Bonebreaker', 'Orc Storm Orc', 'Orc Frost Orc',
+  'Orc Ash Orc', 'Orc Blacktooth Orc', 'Orc Red Fang Orc',
+];
+
+const ORC_VARIANT_ATTACK_LIBRARY = [
+  { name: 'Brutal Greataxe', kind: 'Melee Weapon Attack', theme: 'great axe', range: 'reach 5 ft.', target: 'one target', damage: '1d12+3', damageType: 'slashing', rider: 'If the target is bloodied, it takes an extra 3 (1d6) slashing damage.' },
+  { name: 'Hooking Spear', kind: 'Melee Weapon Attack', theme: 'spear', range: 'reach 10 ft.', target: 'one target', damage: '1d10+3', damageType: 'piercing', rider: 'Target must succeed on a DC 13 Strength save or be pulled 10 feet.' },
+  { name: 'Raiders Javelin', kind: 'Ranged Weapon Attack', theme: 'javelin', range: '30/120 ft.', target: 'one target', damage: '1d8+3', damageType: 'piercing', rider: 'The first hit each turn reduces target speed by 10 feet.' },
+  { name: 'Shieldbash', kind: 'Melee Weapon Attack', theme: 'slam', range: 'reach 5 ft.', target: 'one target', damage: '1d8+3', damageType: 'bludgeoning', rider: 'Target must succeed on a DC 13 Strength save or be knocked prone.' },
+  { name: 'Cleaving Chop', kind: 'Melee Weapon Attack', theme: 'cleaver', range: 'reach 5 ft.', target: 'one target', damage: '2d6+3', damageType: 'slashing', rider: 'A second creature within 5 feet takes 3 slashing damage.' },
+  { name: 'Skullsplitter', kind: 'Melee Weapon Attack', theme: 'maul', range: 'reach 5 ft.', target: 'one target', damage: '1d10+3', damageType: 'bludgeoning', rider: 'On a critical hit, the target is stunned until the end of its next turn.' },
+  { name: 'Nightblade Strike', kind: 'Melee Weapon Attack', theme: 'blade', range: 'reach 5 ft.', target: 'one target', damage: '1d8+3', damageType: 'slashing', rider: 'Deals an extra 3 (1d6) poison damage when attacking with advantage.' },
+  { name: 'Bonebreaker Maul', kind: 'Melee Weapon Attack', theme: 'maul', range: 'reach 5 ft.', target: 'one target', damage: '2d8+3', damageType: 'bludgeoning', rider: 'Target has disadvantage on opportunity attacks until end of its next turn.' },
+];
+
+const ORC_VARIANT_ACTION_LIBRARY = [
+  { name: 'Warcry of the Horde', description: 'Each allied orc within 30 feet that can hear this creature gains advantage on its next attack roll before the end of its next turn.', usage: '1/short rest' },
+  { name: 'Savage Rush', description: 'The orc moves up to its speed toward an enemy and can make one melee attack as part of this movement. Opportunity attacks against it are made with disadvantage.' },
+  { name: 'Crushing Follow-Through', description: 'After this orc hits a creature with a melee attack, it can force that target to make a DC 13 Strength save or be shoved 10 feet.' },
+  { name: 'Drumbeat Advance', description: 'Until the start of this orc\'s next turn, allied creatures that start their turn within 20 feet gain +10 feet to walking speed.', usage: '3/day' },
+  { name: 'Hex Totem', description: 'One creature the orc can see within 60 feet must succeed on a DC 13 Wisdom save or deal half damage with weapon attacks until the end of its next turn.', usage: '2/day' },
+  { name: 'Blood Frenzy', description: 'The orc gains advantage on melee attack rolls and resistance to bludgeoning, piercing, and slashing damage until the start of its next turn.', recharge: '5-6' },
+];
+
+const ORC_VARIANT_PROFILE_RULES = [
+  { tokens: ['archer', 'javelin-thrower', 'hunter', 'scout', 'tracker'], role: 'artillery', attacks: ['Raiders Javelin'], actions: ['Savage Rush'] },
+  { tokens: ['shaman', 'war priest', 'hexer', 'bonecaster', 'spirit caller', 'firecaller', 'necroshaman', 'witch doctor', 'doomcaller'], role: 'controller', attacks: ['Nightblade Strike'], actions: ['Hex Totem'] },
+  { tokens: ['drummer', 'standard-bearer', 'taskmaster', 'captain', 'chieftain', 'warlord'], role: 'support', attacks: ['Shieldbash'], actions: ['Warcry of the Horde', 'Drumbeat Advance'] },
+  { tokens: ['wolf rider', 'boar rider', 'skirmisher', 'raider', 'reaver', 'ambusher', 'stalker', 'nightblade', 'assassin'], role: 'skirmisher', attacks: ['Hooking Spear', 'Raiders Javelin', 'Nightblade Strike'], actions: ['Savage Rush', 'Crushing Follow-Through'] },
+  { tokens: ['shieldbearer', 'ironhide', 'blood guard', 'elite guard', 'veteran', 'champion', 'duelist'], role: 'defender', attacks: ['Shieldbash', 'Brutal Greataxe'], actions: ['Crushing Follow-Through'] },
+  { tokens: ['brute', 'brawler', 'berserker', 'ravager', 'marauder', 'bloodrager', 'executioner', 'demolisher', 'gatecrusher', 'butcher', 'flesh-eater', 'bonebreaker', 'war beast', 'storm orc', 'frost orc', 'ash orc'], role: 'brute', attacks: ['Brutal Greataxe', 'Bonebreaker Maul', 'Cleaving Chop', 'Skullsplitter'], actions: ['Blood Frenzy', 'Savage Rush'] },
+];
+
+const ORC_ROLE_DEFAULTS = {
+  brute: { attacks: ['Brutal Greataxe', 'Bonebreaker Maul', 'Cleaving Chop', 'Skullsplitter'], actions: ['Blood Frenzy', 'Savage Rush'] },
+  skirmisher: { attacks: ['Hooking Spear', 'Raiders Javelin', 'Nightblade Strike'], actions: ['Savage Rush', 'Crushing Follow-Through'] },
+  artillery: { attacks: ['Raiders Javelin', 'Hooking Spear'], actions: ['Savage Rush'] },
+  support: { attacks: ['Shieldbash', 'Brutal Greataxe'], actions: ['Warcry of the Horde', 'Drumbeat Advance'] },
+  controller: { attacks: ['Nightblade Strike', 'Hooking Spear'], actions: ['Hex Totem', 'Crushing Follow-Through'] },
+  defender: { attacks: ['Shieldbash', 'Brutal Greataxe'], actions: ['Crushing Follow-Through', 'Warcry of the Horde'] },
+};
+
 const STYLE_PROFILES = {
   balanced: { names: ['Riftclaw Predator', 'Moonfen Howler', 'Runic Bastion', 'Ashcoil Ravager', 'Stonevein Brute', 'Glasswing Manticore'], traits: ['Battle-hardened', 'Adaptive', 'Relentless'], actions: ['Crushing Advance', 'Tactical Feint', 'Break Formation'], flavor: ['Disciplined hunter', 'Ruin-forged enforcer', 'Territorial apex creature'] },
   horror: { names: ['Whispering Ossuary', 'Gloam-Eyed Collector', 'Pale Mire Widow', 'Hollow Choir Horror', 'Dread Lantern Wretch'], traits: ['Aura of Dread', 'Unnerving Presence', 'Body Horror'], actions: ['Devouring Scream', 'Harvest Memory', 'Grave Pull'], flavor: ['Feeds on fear', 'Stalks isolated prey', 'Turns battlefields into nightmares'] },
@@ -204,7 +254,7 @@ if (hasDocument && formEl && statusEl) {
 }
 
 function createDefaultMonster() {
-  return {
+  const generatedMonster = {
     schemaVersion: 1,
     identity: {
       name: 'Ashenfang Matriarch',
@@ -265,6 +315,8 @@ function createDefaultMonster() {
     },
     ...FOUNDATION_FLAGS,
   };
+
+  return generatedMonster;
 }
 
 async function init() {
@@ -664,6 +716,7 @@ function syncSrdSelection(cr, selectedMonster) {
 
 
 function generateRandomMonster(cr, styleKey) {
+  const baseMonster = monster && typeof monster === 'object' ? monster : createDefaultMonster();
   const profile = STYLE_PROFILES[styleKey] || STYLE_PROFILES.balanced;
   const normalizedCr = normalizeCrKey(cr);
   const numericCr = crToNumber(normalizedCr);
@@ -755,9 +808,9 @@ function generateRandomMonster(cr, styleKey) {
     usedDescriptionOpeners: new Set(),
   };
 
-  return {
+  const generatedMonster = {
     identity: {
-      ...monster.identity,
+      ...baseMonster.identity,
       name,
       subtitle: `${size} ${type}${humanoidSubtype ? ` (${humanoidSubtype.toLowerCase()})` : ''}, ${alignment}`,
       size,
@@ -772,7 +825,7 @@ function generateRandomMonster(cr, styleKey) {
       origin,
     },
     core: {
-      ...monster.core,
+      ...baseMonster.core,
       ac,
       hp,
       hitDice: `${hitDiceCount}d${hitDieSize}${hitDiceBonus ? ` + ${hitDiceBonus}` : ''}`,
@@ -783,7 +836,7 @@ function generateRandomMonster(cr, styleKey) {
       passivePerception: 10 + Math.floor((abilities.wis - 10) / 2) + (chance(0.55) ? proficiencyBonus : 0),
     },
     defense: {
-      ...monster.defense,
+      ...baseMonster.defense,
       savingThrows: buildSavingThrows(abilities, proficiencyBonus),
       skills: buildSkills(proficiencyBonus),
       vulnerabilities: chance(0.3) ? pickMany(DAMAGE_TYPES.filter((d) => d !== mainDamage && !(affinityProfile.avoidDamage || []).includes(d)), 1) : [],
@@ -795,7 +848,7 @@ function generateRandomMonster(cr, styleKey) {
       telepathy: chance(0.4) ? `${randomInt(30, 120)} ft.` : '',
     },
     combat: {
-      ...monster.combat,
+      ...baseMonster.combat,
       traits: Array.from({ length: traitCount }, (_, index) => buildTrait({
         profileTraits: profile.traits,
         name,
@@ -818,7 +871,7 @@ function generateRandomMonster(cr, styleKey) {
       spellcasting: chance(0.7) ? [buildSpellcasting(saveDc, proficiencyBonus, abilities, affinityProfile)] : [],
     },
     flavor: {
-      ...monster.flavor,
+      ...baseMonster.flavor,
       summary: `${name} is a ${roleFlavor.toLowerCase()} ${type} built for CR ${normalizedCr} encounters with ${RANDOM_STYLES[styleKey] || 'balanced'} flavor.`,
       appearance: pick(['Armor plates etched in runes.', 'A distorted silhouette with too many eyes.', 'Crystalline growths pulse with internal light.', 'Its body leaks elemental residue with every movement.', 'Its shadow moves half a second out of sync.', 'Each step leaves a brief sigil of power on the ground.']),
       behavior: pick(['Tests defenses before committing.', 'Prioritizes isolated and wounded prey.', 'Retreats only to set an ambush.', 'Escalates quickly if bloodied.', 'Switches targets whenever someone resists its preferred damage type.']),
@@ -830,6 +883,8 @@ function generateRandomMonster(cr, styleKey) {
       readAloud: `A hush falls over the battlefield as ${name} steps forward, its presence bending the mood of the room before the first blow is struck.`,
     },
   };
+
+  return applyOrcVariantCustomization(generatedMonster);
 }
 
 function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile }) {
@@ -860,6 +915,118 @@ function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, 
     styleNote: `Generated with ${RANDOM_STYLES[styleKey] || 'Balanced'} style.`,
     recharge: chance(0.3) ? '5-6' : '',
     multiattackGroup: chance(0.8) ? 'Multiattack' : '',
+  };
+}
+
+function isOrcIdentity(identity = {}) {
+  const name = String(identity.name || '').toLowerCase();
+  const type = String(identity.type || '').toLowerCase();
+  const tags = String(identity.tags || '').toLowerCase();
+  const race = String(identity.ancestryRace || '').toLowerCase();
+  const subrace = String(identity.ancestrySubrace || '').toLowerCase();
+  return race.includes('orc') || subrace.includes('orc') || type.includes('orc') || tags.includes('orc') || /^orc\b/.test(name);
+}
+
+function getOrcVariantProfile(variantName = '') {
+  const normalizedName = String(variantName || '').toLowerCase();
+  const profile = ORC_VARIANT_PROFILE_RULES.find((entry) => entry.tokens.some((token) => normalizedName.includes(token)));
+  return profile || { role: 'brute', attacks: [], actions: [] };
+}
+
+function pickAttackTemplateByName(name) {
+  return ORC_VARIANT_ATTACK_LIBRARY.find((entry) => entry.name === name) || null;
+}
+
+function pickActionTemplateByName(name) {
+  return ORC_VARIANT_ACTION_LIBRARY.find((entry) => entry.name === name) || null;
+}
+
+function getOrcRoleDefaults(role = 'brute') {
+  return ORC_ROLE_DEFAULTS[role] || ORC_ROLE_DEFAULTS.brute;
+}
+
+function createOrcVariantAttack(baseAttack = {}, preferredAttackNames = []) {
+  const preferredTemplates = preferredAttackNames.map((name) => pickAttackTemplateByName(name)).filter(Boolean);
+  const template = pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ATTACK_LIBRARY) || ORC_VARIANT_ATTACK_LIBRARY[0];
+  const templateDamageType = String(template.damageType || 'slashing');
+  const damage = String(baseAttack.damage || template.damage || '1d8+3');
+  const secondaryDamage = String(baseAttack.secondaryDamage || '');
+  const hitRoll = damage.replace(/\s+/g, '');
+  const hitText = `${damageRollAverage(hitRoll)} (${hitRoll}) ${templateDamageType} damage${secondaryDamage ? ` plus ${secondaryDamage}` : ''}`;
+
+  return normalizeAttackEntry({
+    ...baseAttack,
+    name: template.name,
+    kind: template.kind,
+    theme: template.theme,
+    range: template.range,
+    target: template.target,
+    damage,
+    damageType: templateDamageType,
+    rider: template.rider,
+    hit: hitText,
+  });
+}
+
+function createOrcVariantAction(baseAction = {}, preferredActionNames = []) {
+  const preferredTemplates = preferredActionNames.map((name) => pickActionTemplateByName(name)).filter(Boolean);
+  const template = pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ACTION_LIBRARY) || ORC_VARIANT_ACTION_LIBRARY[0];
+  return normalizeCombatFeatureEntry({
+    ...baseAction,
+    name: template.name,
+    category: 'Action',
+    description: template.description,
+    usage: template.usage || baseAction.usage || '',
+    recharge: template.recharge || baseAction.recharge || '',
+    trigger: template.trigger || baseAction.trigger || '',
+  }, 'Action');
+}
+
+function applyOrcVariantCustomization(monsterData) {
+  const result = monsterData && typeof monsterData === 'object' ? monsterData : createDefaultMonster();
+  if (!isOrcIdentity(result.identity)) return result;
+
+  const chosenName = pick(ORC_VARIANTS) || result.identity.name || 'Orc Warrior';
+  const profile = getOrcVariantProfile(chosenName);
+  const roleDefaults = getOrcRoleDefaults(profile.role);
+  const preferredAttacks = profile.attacks?.length ? profile.attacks : roleDefaults.attacks;
+  const preferredActions = profile.actions?.length ? profile.actions : roleDefaults.actions;
+  const attackPool = arrayOrEmpty(result?.combat?.attacks);
+  const actionPool = arrayOrEmpty(result?.combat?.actions);
+
+  const updatedAttacks = attackPool.length
+    ? attackPool.map((attack, index) => (index < 2 ? createOrcVariantAttack(attack, preferredAttacks) : normalizeAttackEntry(attack)))
+    : [createOrcVariantAttack({}, preferredAttacks)];
+
+  const updatedActions = actionPool.length
+    ? actionPool.map((action, index) => (index < 2 ? createOrcVariantAction(action, preferredActions) : normalizeCombatFeatureEntry(action, 'Action')))
+    : [createOrcVariantAction({}, preferredActions)];
+
+  return {
+    ...result,
+    identity: {
+      ...result.identity,
+      name: chosenName,
+      subtitle: `${result.identity.size || 'Medium'} ${result.identity.type || 'humanoid'} (orc), ${result.identity.alignment || 'chaotic evil'}`,
+      tags: mergeCsvValues(result.identity.tags, 'orc, horde, warband'),
+      role: profile.role || result.identity.role || 'brute',
+      ancestryRace: 'Orc',
+    },
+    defense: {
+      ...result.defense,
+      languages: mergeCsvValues(result.defense.languages, 'Orc'),
+    },
+    combat: {
+      ...result.combat,
+      attacks: updatedAttacks,
+      actions: updatedActions,
+    },
+    flavor: {
+      ...result.flavor,
+      summary: `${chosenName} is an orc variant built for warband encounters and battlefield pressure.`,
+      tactics: `${chosenName} coordinates brutal front-line pressure, then pivots into opportunistic strikes.`,
+      habitat: result.flavor?.habitat || 'raider camps, badlands, mountain passes, and fortified war camps',
+    },
   };
 }
 
@@ -1159,6 +1326,32 @@ function buildSkills(proficiencyBonus) {
 
 function formatSigned(value) {
   return `${value >= 0 ? '+' : ''}${value}`;
+}
+
+function damageRollAverage(roll) {
+  const cleaned = String(roll || '').replace(/\s+/g, '');
+  const match = cleaned.match(/^(\d+)d(\d+)([+-]\d+)?$/i);
+  if (!match) return 0;
+  const count = Number(match[1]) || 0;
+  const die = Number(match[2]) || 0;
+  const bonus = Number(match[3] || 0);
+  return Math.floor((count * (die + 1)) / 2 + bonus);
+}
+
+function mergeCsvValues(...values) {
+  const merged = [];
+  values.forEach((value) => {
+    String(value || '')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .forEach((part) => {
+        if (!merged.some((entry) => entry.toLowerCase() === part.toLowerCase())) {
+          merged.push(part);
+        }
+      });
+  });
+  return merged.join(', ');
 }
 
 function saveLocal() {
@@ -1918,7 +2111,7 @@ function importSrdMonster(srd, currentMonster) {
   const inferredHabitat = inferHabitatFromSrd(srd);
   const actionNames = arrayOrEmpty(srd.actions).map((action) => action.name).filter(Boolean);
 
-  return {
+  const importedMonster = {
     ...currentMonster,
     identity: {
       ...currentMonster.identity,
@@ -1988,6 +2181,8 @@ function importSrdMonster(srd, currentMonster) {
       readAloud: `You spot ${srd.name} ahead: ${srd.size || 'medium'} silhouette, tense posture, and a threat that radiates immediate danger.`,
     },
   };
+
+  return applyOrcVariantCustomization(importedMonster);
 }
 
 function inferHabitatFromSrd(srd) {
