@@ -41,6 +41,10 @@
     { name: 'Stone Golem', cr: 10, xp: 5900, environments: ['dungeon'] }
   ];
 
+  const SRD_MONSTER_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/monsters';
+  const SRD_MONSTER_API_BASE = 'https://www.dnd5eapi.co';
+  const SRD_CACHE_KEY = 'sks-encounter-srd-monsters-v1';
+
   const form = document.getElementById('encounter-form');
   const levelEl = document.getElementById('party-level');
   const sizeEl = document.getElementById('party-size');
@@ -149,6 +153,29 @@
 
   const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
+  function parseArmorClass(value) {
+    if (typeof value === 'number') return value;
+
+    if (Array.isArray(value)) {
+      const first = value.find((entry) => typeof entry === 'number' || typeof entry?.value === 'number');
+      if (typeof first === 'number') return first;
+      if (typeof first?.value === 'number') return first.value;
+      return Number.NaN;
+    }
+
+    if (value && typeof value === 'object' && typeof value.value === 'number') {
+      return value.value;
+    }
+
+    return Number(value);
+  }
+
+  function estimateInitiative(dexterity) {
+    const dex = Number(dexterity);
+    if (!Number.isFinite(dex)) return Number.NaN;
+    return Math.floor((dex - 10) / 2);
+  }
+
   function normalizeMonster(monster) {
     if (!monster || typeof monster !== 'object') {
       return null;
@@ -166,7 +193,46 @@
       ? monster.environments
       : ['any'];
 
-    return { name, cr, xp, environments };
+    const hp = Number(monster.hit_points ?? monster.hp);
+    const ac = parseArmorClass(monster.armor_class ?? monster.ac);
+    const init = Number(monster.init ?? estimateInitiative(monster.dexterity));
+
+    return {
+      name,
+      cr,
+      xp,
+      environments,
+      hp: Number.isFinite(hp) && hp > 0 ? hp : null,
+      ac: Number.isFinite(ac) && ac > 0 ? ac : null,
+      init: Number.isFinite(init) ? init : null
+    };
+  }
+
+  async function loadSrdMonstersFromApi() {
+    const listResponse = await fetch(SRD_MONSTER_LIST_ENDPOINT);
+    if (!listResponse.ok) {
+      throw new Error('Unable to load SRD monster list.');
+    }
+
+    const listData = await listResponse.json();
+    const monsters = Array.isArray(listData?.results) ? listData.results : [];
+    const detailed = (await Promise.all(monsters.map(async (entry) => {
+      if (!entry?.url) return null;
+      try {
+        const response = await fetch(`${SRD_MONSTER_API_BASE}${entry.url}`);
+        if (!response.ok) return null;
+        const detail = await response.json();
+        return normalizeMonster(detail);
+      } catch (error) {
+        return null;
+      }
+    }))).filter(Boolean);
+
+    if (detailed.length) {
+      localStorage.setItem(SRD_CACHE_KEY, JSON.stringify(detailed));
+    }
+
+    return detailed;
   }
 
   async function loadMonsterPool() {
@@ -182,13 +248,39 @@
         statusEl.textContent = `Loaded ${normalized.length} monsters from local data.`;
         return normalized;
       }
-
-      statusEl.textContent = 'Local monster data is empty. Using curated fallback roster.';
-      return FALLBACK_MONSTERS;
     } catch (error) {
-      statusEl.textContent = 'Could not load local monster data. Using curated fallback roster.';
-      return FALLBACK_MONSTERS;
+      statusEl.textContent = 'Could not load local monster data. Trying SRD API...';
     }
+
+    try {
+      const cached = localStorage.getItem(SRD_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const normalizedCached = Array.isArray(parsed) ? parsed.map(normalizeMonster).filter(Boolean) : [];
+        if (normalizedCached.length) {
+          statusEl.textContent = `Loaded ${normalizedCached.length} monsters from cached SRD data.`;
+          return normalizedCached;
+        }
+      }
+    } catch (error) {
+      localStorage.removeItem(SRD_CACHE_KEY);
+    }
+
+    try {
+      const srdMonsters = await loadSrdMonstersFromApi();
+      if (srdMonsters.length > 0) {
+        statusEl.textContent = `Loaded ${srdMonsters.length} monsters from the SRD API.`;
+        return srdMonsters;
+      }
+    } catch (error) {
+      statusEl.textContent = 'SRD API unavailable. Using curated fallback roster.';
+    }
+
+    if (statusEl.textContent !== 'SRD API unavailable. Using curated fallback roster.') {
+      statusEl.textContent = 'Local/SRD monster data unavailable. Using curated fallback roster.';
+    }
+
+    return FALLBACK_MONSTERS.map((monster) => normalizeMonster(monster)).filter(Boolean);
   }
 
   function getThresholds(level, size) {
@@ -217,7 +309,8 @@
       if (existing) {
         existing.quantity += quantity;
       } else {
-        roster.push({ ...pick, quantity });
+        const stats = getMonsterStats(pick);
+        roster.push({ ...pick, ...stats, quantity });
       }
 
       rawXp = roster.reduce((sum, creature) => sum + creature.xp * creature.quantity, 0);
@@ -377,6 +470,23 @@
     };
   }
 
+  function getMonsterStats(monster) {
+    const explicitHp = Number(monster?.hp);
+    const explicitAc = Number(monster?.ac);
+    const explicitInit = Number(monster?.init);
+
+    if (Number.isFinite(explicitHp) && Number.isFinite(explicitAc) && Number.isFinite(explicitInit)) {
+      return { hp: explicitHp, ac: explicitAc, init: explicitInit };
+    }
+
+    const estimated = estimateMonsterStats(monster?.cr);
+    return {
+      hp: Number.isFinite(explicitHp) ? explicitHp : estimated.hp,
+      ac: Number.isFinite(explicitAc) ? explicitAc : estimated.ac,
+      init: Number.isFinite(explicitInit) ? explicitInit : estimated.init
+    };
+  }
+
   function buildEncounterExportPayload() {
     if (!lastGenerated || !lastGenerated.encounters.length) {
       return null;
@@ -385,7 +495,7 @@
     const bestEncounter = lastGenerated.encounters[0];
     const hooks = lastGenerated.hooks;
     const monsters = bestEncounter.roster.map((monster) => {
-      const estimated = estimateMonsterStats(monster.cr);
+      const estimated = getMonsterStats(monster);
       return {
         name: monster.name,
         count: monster.quantity,
