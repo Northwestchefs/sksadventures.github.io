@@ -798,7 +798,9 @@ function generateRandomMonster(cr, styleKey) {
 
   const affinityProfile = AFFINITY_RULES[affinity] || AFFINITY_RULES.primal;
   const mainDamage = pick(affinityProfile.damagePool || DAMAGE_TYPES);
-  const attackCount = randomInt(1, numericCr >= 8 ? 3 : 2);
+  const targetDpr = randomInt(baseline.dprMin, baseline.dprMax);
+  const maxAttackCount = Math.min(numericCr >= 8 ? 3 : 2, Math.max(1, targetDpr));
+  const attackCount = randomInt(1, maxAttackCount);
   const traitCount = randomInt(1, 3);
   const actionCount = randomInt(1, 3);
   const bonusCount = chance(0.75) ? randomInt(1, 2) : 0;
@@ -810,7 +812,8 @@ function generateRandomMonster(cr, styleKey) {
   const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.wis, abilities.cha) - 10) / 2);
   const roleFlavor = pick(profile.flavor);
 
-  const attacks = Array.from({ length: attackCount }, () => buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile }));
+  const attackDamageBudgets = distributeDamageBudget(targetDpr, attackCount, 1);
+  const attacks = attackDamageBudgets.map((primaryAvgDamage) => buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile, primaryAvgDamage }));
 
   const traitBuildContext = {
     usedTitles: new Set(),
@@ -896,14 +899,36 @@ function generateRandomMonster(cr, styleKey) {
     },
   };
 
-  return applyOrcVariantCustomization(generatedMonster);
+  return ensureMonsterAttackDprInRange(applyOrcVariantCustomization(generatedMonster));
 }
 
-function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile }) {
+function ensureMonsterAttackDprInRange(currentMonster) {
+  if (!currentMonster || typeof currentMonster !== 'object') return currentMonster;
+  const normalizedCr = normalizeCrKey(currentMonster?.identity?.cr || '1');
+  const baseline = getCrBaseline(normalizedCr);
+  const attacks = Array.isArray(currentMonster?.combat?.attacks) ? currentMonster.combat.attacks : [];
+  if (!attacks.length) return currentMonster;
+
+  const targetDpr = randomInt(baseline.dprMin, baseline.dprMax);
+  const budgets = distributeDamageBudget(targetDpr, attacks.length, 1);
+
+  attacks.forEach((attack, index) => {
+    if (!attack || typeof attack !== 'object') return;
+    const theme = String(attack.theme || '').toLowerCase() || 'slam';
+    const avgDamage = budgets[index] || 1;
+    const dice = damageDice(avgDamage, theme);
+    const secondaryClause = String(attack.hit || '').match(/\splus\s.+$/i)?.[0] || '';
+    const damageType = String(attack.damageType || 'bludgeoning');
+    attack.damage = dice;
+    attack.hit = `${avgDamage} (${dice}) ${damageType} damage${secondaryClause}`;
+  });
+
+  return currentMonster;
+}
+
+function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile, primaryAvgDamage = null }) {
   const attackTheme = pick((affinityProfile && affinityProfile.attackThemes) || ATTACK_THEMES);
-  const crKey = normalizeCrKey(numericCr);
-  const baseline = getCrBaseline(crKey);
-  const avgDamage = randomInt(Math.max(2, baseline.dprMin), Math.max(4, baseline.dprMax));
+  const avgDamage = Math.max(1, Number(primaryAvgDamage) || 1);
   const dice = damageDice(avgDamage, attackTheme);
   const toHit = `+${Math.max(3, proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.dex) - 10) / 2))}`;
   const saveDc = 10 + proficiencyBonus + Math.floor((Math.max(abilities.str, abilities.wis) - 10) / 2);
@@ -1296,6 +1321,22 @@ function weightedPick(entries) {
     if (roll <= 0) return entry.value;
   }
   return valid[valid.length - 1].value;
+}
+
+function distributeDamageBudget(total, count, minEach = 1) {
+  const safeCount = Math.max(1, count);
+  const safeMin = Math.max(0, minEach);
+  const budget = Math.max(safeCount * safeMin, Math.round(Number(total) || 0));
+  const chunks = Array(safeCount).fill(safeMin);
+  let remaining = budget - safeCount * safeMin;
+
+  while (remaining > 0) {
+    const idx = randomInt(0, safeCount - 1);
+    chunks[idx] += 1;
+    remaining -= 1;
+  }
+
+  return chunks;
 }
 
 if (typeof globalThis !== 'undefined') {
