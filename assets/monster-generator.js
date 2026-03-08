@@ -152,6 +152,41 @@ const AFFINITY_RULES = {
   },
 };
 
+const TRAIT_ARCHETYPES = {
+  brute: [
+    { effect: 'takes reduced damage from weapon hits', trigger: 'while above half hit points', kind: 'mitigation', scalesWith: 'proficiency' },
+    { effect: 'knocks creatures prone when it moves through their space', trigger: 'once on each turn', kind: 'control', scalesWith: 'saveDc' },
+  ],
+  skirmisher: [
+    { effect: 'can move up to 10 feet without provoking opportunity attacks', trigger: 'after it damages a creature', kind: 'mobility', scalesWith: 'flat' },
+    { effect: 'imposes disadvantage on the next attack against it', trigger: 'when it moves at least 15 feet on its turn', kind: 'defense', scalesWith: 'saveDc' },
+  ],
+  controller: [
+    { effect: 'reduces a target\'s speed by 10 feet', trigger: 'when it deals damage', kind: 'control', scalesWith: 'saveDc' },
+    { effect: 'creates difficult terrain in a 10-foot radius', trigger: 'at the start of its turn', kind: 'zone', scalesWith: 'flat' },
+  ],
+  artillery: [
+    { effect: 'ignores half cover with ranged attacks', trigger: 'always active', kind: 'offense', scalesWith: 'flat' },
+    { effect: 'deals bonus damage to creatures farther than 30 feet', trigger: 'on ranged hits', kind: 'damage', scalesWith: 'proficiency' },
+  ],
+  support: [
+    { effect: 'grants temporary hit points to an ally', trigger: 'at the start of its turn', kind: 'ally', scalesWith: 'proficiency' },
+    { effect: 'lets an ally reroll a failed save', trigger: 'as a reaction', kind: 'ally', scalesWith: 'usage' },
+  ],
+  defender: [
+    { effect: 'marks creatures it hits, imposing disadvantage on attacks not targeting it', trigger: 'until the start of its next turn', kind: 'mark', scalesWith: 'flat' },
+    { effect: 'can intercept damage meant for an adjacent ally', trigger: 'as a reaction', kind: 'ally', scalesWith: 'proficiency' },
+  ],
+  boss: [
+    { effect: 'shrugs off one failed save', trigger: 'once per round', kind: 'legendary', scalesWith: 'usage' },
+    { effect: 'immediately makes a weapon attack', trigger: 'when reduced below half hit points', kind: 'counter', scalesWith: 'flat' },
+  ],
+  ambusher: [
+    { effect: 'deals extra damage against surprised creatures', trigger: 'on the first round of combat', kind: 'damage', scalesWith: 'proficiency' },
+    { effect: 'becomes lightly obscured by shadow or mist', trigger: 'if it moved this turn', kind: 'defense', scalesWith: 'flat' },
+  ],
+};
+
 const formEl = document.getElementById('monster-form');
 const statusEl = document.getElementById('studio-status');
 
@@ -482,7 +517,7 @@ function renderFeatureGroup(group) {
   const title = pretty(group);
   const list = monster.combat[group] || [];
   if (!list.length) return '';
-  return `<h3>${title}</h3><ul>${list.map((entry) => `<li><strong>${entry.name || 'Untitled'}.</strong> ${entry.description || entry.hit || ''}${entry.trigger ? ` <em>Trigger:</em> ${entry.trigger}.` : ''}${entry.recharge ? ` <em>Recharge:</em> ${entry.recharge}.` : ''}</li>`).join('')}</ul>`;
+  return `<h3>${title}</h3><ul>${list.map((entry) => `<li><strong>${entry.name || 'Untitled'}.</strong> ${entry.description || entry.hit || ''}${entry.trigger ? ` <em>Trigger:</em> ${entry.trigger}.` : ''}${entry.saveDc ? ` <em>Save:</em> ${entry.saveDc}.` : ''}${entry.usage ? ` <em>Usage:</em> ${entry.usage}.` : ''}${entry.recharge ? ` <em>Recharge:</em> ${entry.recharge}.` : ''}</li>`).join('')}</ul>`;
 }
 
 function renderCard() {
@@ -650,7 +685,7 @@ function generateRandomMonster(cr, styleKey) {
     },
     combat: {
       ...monster.combat,
-      traits: Array.from({ length: traitCount }, () => buildFeature(profile.traits, ['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol'], name, roleFlavor, 'Trait')),
+      traits: Array.from({ length: traitCount }, (_, index) => buildTrait({ profileTraits: profile.traits, name, roleFlavor, role, saveDc, proficiencyBonus, numericCr, mainDamage, index })),
       actions: Array.from({ length: actionCount }, () => buildAction(profile.actions, saveDc, mainDamage, name, affinityProfile)),
       bonusActions: Array.from({ length: bonusCount }, () => buildBonusAction(name, affinityProfile)),
       reactions: Array.from({ length: reactionCount }, () => buildReaction(name, affinityProfile)),
@@ -705,15 +740,30 @@ function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, 
   };
 }
 
-function buildFeature(traits, suffixes, name, roleFlavor, category) {
+function buildTrait({ profileTraits, name, roleFlavor, role, saveDc, proficiencyBonus, numericCr, mainDamage, index }) {
+  const suffixes = ['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol', 'Directive', 'Manifestation'];
+  const roleTemplates = TRAIT_ARCHETYPES[role] || TRAIT_ARCHETYPES.brute;
+  const template = roleTemplates[index % roleTemplates.length] || pick(roleTemplates);
+  const title = `${pick(profileTraits)} ${pick(suffixes)}`;
+  const saveAbility = pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom']);
+  const bonusValue = Math.max(2, Math.ceil(proficiencyBonus * 1.5));
+  const scalingText = template.scalesWith === 'saveDc'
+    ? `Creatures can resist with a DC ${saveDc} ${saveAbility} save.`
+    : template.scalesWith === 'proficiency'
+      ? `The effect scales by ${bonusValue} (${proficiencyBonus} PB-based) ${mainDamage} damage or protection.`
+      : '';
+  const usage = template.scalesWith === 'usage' || (numericCr >= 10 && chance(0.35)) ? `${Math.max(1, Math.ceil(proficiencyBonus / 2))}/round` : '';
+  const recharge = template.kind === 'counter' || template.kind === 'zone' ? (chance(0.5) ? '5-6' : '') : '';
+  const trigger = template.trigger === 'always active' ? '' : template.trigger;
+
   return {
-    name: `${pick(traits)} ${pick(suffixes)}`,
-    category,
-    description: `${name} embodies a ${roleFlavor.toLowerCase()} approach to combat and gains a tactical edge whenever enemies cluster together.`,
-    saveDc: '',
-    recharge: chance(0.2) ? '6' : '',
-    usage: chance(0.3) ? `${randomInt(1, 3)}/day` : '',
-    trigger: chance(0.3) ? pick(['When bloodied', 'When it drops to half hit points', 'When first targeted by a spell']) : '',
+    name: title,
+    category: 'Trait',
+    description: `${name} embodies a ${roleFlavor.toLowerCase()} approach to combat and ${template.effect}. ${scalingText}`.trim(),
+    saveDc: template.scalesWith === 'saveDc' ? `${saveDc} ${saveAbility.slice(0, 3)}` : '',
+    recharge,
+    usage,
+    trigger,
   };
 }
 
@@ -1227,14 +1277,13 @@ function mapSensesToFoundry(senses = []) {
 }
 
 function buildCombatDescription(entry) {
-  const details = [
-    entry.description,
-    entry.trigger ? `<p><strong>Trigger:</strong> ${entry.trigger}</p>` : '',
-    entry.saveDc ? `<p><strong>Save:</strong> ${entry.saveDc}</p>` : '',
-    entry.recharge ? `<p><strong>Recharge:</strong> ${entry.recharge}</p>` : '',
-    entry.usage ? `<p><strong>Usage:</strong> ${entry.usage}</p>` : '',
-  ].filter(Boolean).join('');
-  return `<p>${details}</p>`;
+  const details = [];
+  if (entry.description) details.push(`<p>${entry.description}</p>`);
+  if (entry.trigger) details.push(`<p><strong>Trigger:</strong> ${entry.trigger}</p>`);
+  if (entry.saveDc) details.push(`<p><strong>Save:</strong> ${entry.saveDc}</p>`);
+  if (entry.recharge) details.push(`<p><strong>Recharge:</strong> ${entry.recharge}</p>`);
+  if (entry.usage) details.push(`<p><strong>Usage:</strong> ${entry.usage}</p>`);
+  return details.join('');
 }
 
 function buildAttackDescription(attack) {
