@@ -3,7 +3,10 @@ const STORAGE_KEY = 'sks-monster-studio-v1';
 const CR_OPTIONS = ['0', '1/8', '1/4', '1/2', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
 
 const SRD_DATA_PATH = '../data/monsters.json';
-const SRD_IMPORT_CAP = 12;
+
+const SRD_MONSTER_LIST_ENDPOINT = 'https://www.dnd5eapi.co/api/2014/monsters';
+const SRD_MONSTER_API_BASE = 'https://www.dnd5eapi.co';
+const SRD_CACHE_KEY = 'sks-monster-generator-srd-monsters-v1';
 
 const CR_BASELINES = {
   '0': { ac: 13, hpMin: 1, hpMax: 7, dprMin: 0, dprMax: 1 },
@@ -1266,6 +1269,27 @@ async function loadSrdMonsters() {
     srdMonsters = [];
   }
 
+  if (!srdMonsters.length) {
+    try {
+      const cached = localStorage.getItem(SRD_CACHE_KEY);
+      if (cached) {
+        const parsedCached = JSON.parse(cached);
+        if (Array.isArray(parsedCached)) srdMonsters = parsedCached;
+      }
+    } catch {
+      localStorage.removeItem(SRD_CACHE_KEY);
+    }
+  }
+
+  if (!srdMonsters.length) {
+    try {
+      srdMonsters = await fetchSrdMonsterCatalog();
+      localStorage.setItem(SRD_CACHE_KEY, JSON.stringify(srdMonsters));
+    } catch {
+      srdMonsters = [];
+    }
+  }
+
   const normalized = srdMonsters
     .map((entry) => normalizeSrdEntry(entry))
     .filter((entry) => entry && entry.name && entry.challenge_rating !== undefined && entry.challenge_rating !== null);
@@ -1280,6 +1304,26 @@ async function loadSrdMonsters() {
   srdMonstersByCr = groupSrdByCr(merged);
 }
 
+async function fetchSrdMonsterCatalog() {
+  const listResponse = await fetch(SRD_MONSTER_LIST_ENDPOINT);
+  if (!listResponse.ok) throw new Error(`HTTP ${listResponse.status}`);
+
+  const listData = await listResponse.json();
+  const monsters = Array.isArray(listData?.results) ? listData.results : [];
+
+  const details = await Promise.all(monsters.map(async (entry) => {
+    try {
+      const detailResponse = await fetch(`${SRD_MONSTER_API_BASE}${entry.url}`);
+      if (!detailResponse.ok) return null;
+      return await detailResponse.json();
+    } catch {
+      return null;
+    }
+  }));
+
+  return details.filter(Boolean);
+}
+
 function groupSrdByCr(list) {
   return list.reduce((acc, entry) => {
     const cr = normalizeCrKey(entry.challenge_rating);
@@ -1292,7 +1336,7 @@ function groupSrdByCr(list) {
 function populateSrdMonsterSelect(cr) {
   const select = document.getElementById('srd-monster-select');
   if (!select) return;
-  const list = (srdMonstersByCr[normalizeCrKey(cr)] || []).slice(0, SRD_IMPORT_CAP);
+  const list = [...(srdMonstersByCr[normalizeCrKey(cr)] || [])].sort((a, b) => a.name.localeCompare(b.name));
   if (!list.length) {
     select.innerHTML = '<option value=>No SRD monsters for this CR</option>';
     select.value = '';
