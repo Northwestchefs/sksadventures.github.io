@@ -276,6 +276,7 @@ async function init() {
   document.getElementById('apply-preset').addEventListener('click', applyPreset);
   document.getElementById('randomize-monster').addEventListener('click', randomFromCr);
   document.getElementById('import-srd-monster').addEventListener('click', loadSelectedSrdMonster);
+  document.getElementById('srd-monster-select').addEventListener('change', loadSelectedSrdMonster);
   document.getElementById('save-local').addEventListener('click', saveLocal);
   document.getElementById('load-local').addEventListener('click', loadLocal);
   document.getElementById('export-json').addEventListener('click', exportJson);
@@ -1682,6 +1683,9 @@ function importSrdMonster(srd, currentMonster) {
     trigger: '',
   }));
 
+  const inferredHabitat = inferHabitatFromSrd(srd);
+  const actionNames = arrayOrEmpty(srd.actions).map((action) => action.name).filter(Boolean);
+
   return {
     ...currentMonster,
     identity: {
@@ -1740,11 +1744,30 @@ function importSrdMonster(srd, currentMonster) {
     flavor: {
       ...currentMonster.flavor,
       summary: `${srd.name} imported from SRD data and ready for tuning in the studio.`,
-      habitat: currentMonster.flavor.habitat,
+      appearance: `${srd.name} is a ${srd.size || 'Medium'} ${srd.type || 'creature'}${subtitleSubtype} with AC ${parseArmorClass(srd.armor_class) || currentMonster.core.ac}.`,
+      behavior: `Tends toward ${srd.alignment || 'unpredictable'} behavior and usually fights in direct, efficient patterns.`,
+      tactics: actionNames.length
+        ? `Opens with ${actionNames.slice(0, 2).join(' and ')}${actionNames.length > 2 ? ', then adapts with remaining actions.' : '.'}`
+        : 'Uses straightforward attacks and focuses exposed targets first.',
+      habitat: inferredHabitat || currentMonster.flavor.habitat,
+      encounterIdeas: `Use as a CR ${normalizeCrKey(srd.challenge_rating || currentMonster.identity.cr)} encounter anchor with terrain that supports ${srd.type || 'its'} strengths.`,
+      loot: `Theme loot around ${srd.type || 'monster'} traits, plus a trophy tied to ${srd.name}.`,
       gmNotes: 'Review action economy, recharge cadence, and encounter role before finalizing this import.',
-      readAloud: currentMonster.flavor.readAloud,
+      readAloud: `You spot ${srd.name} ahead: ${srd.size || 'medium'} silhouette, tense posture, and a threat that radiates immediate danger.`,
     },
   };
+}
+
+function inferHabitatFromSrd(srd) {
+  const sourceText = [srd.type, srd.subtype, srd.name].filter(Boolean).join(' ').toLowerCase();
+  if (/(dragon|wyvern|roc|griffon|harpy|fly|wing)/.test(sourceText)) return 'mountain, sky ruins, windswept cliffs';
+  if (/(undead|ghost|skeleton|zombie|lich|vampire)/.test(sourceText)) return 'catacombs, haunted keeps, forgotten battlefields';
+  if (/(fiend|demon|devil|infernal)/.test(sourceText)) return 'hellscar rifts, cursed temples, volcanic wastes';
+  if (/(beast|wolf|bear|boar|cat)/.test(sourceText)) return 'forests, plains, and wild borderlands';
+  if (/(aberration|mind|ooze|eldritch)/.test(sourceText)) return 'deep caverns, psychic ruins, and planar fractures';
+  if (/(construct|golem|clockwork)/.test(sourceText)) return 'ruined laboratories, arcane vaults, and fortified halls';
+  if (/(elemental|water|fire|air|earth)/.test(sourceText)) return 'elemental nexuses and unstable natural extremes';
+  return '';
 }
 
 function normalizeSrdEntry(entry) {
