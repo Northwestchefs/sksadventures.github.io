@@ -491,8 +491,13 @@ function numberField(label, path, value) {
 function handleInputChange(event) {
   const path = event.target.dataset.path;
   if (!path) return;
+  const previousName = path === 'identity.name' ? String(monster.identity?.name || '') : '';
   const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
   setByPath(monster, path, coerce(value));
+
+  if (path === 'identity.name') {
+    synchronizeMonsterNameReferences(monster, previousName, String(monster.identity?.name || value || ''));
+  }
 
   if (path === 'identity.ancestryRace') {
     const normalizedRace = value === '—' ? '' : value;
@@ -513,6 +518,69 @@ function handleInputChange(event) {
   }
 
   renderPreview();
+}
+
+function synchronizeMonsterNameReferences(monsterData, previousName, nextName) {
+  const oldName = String(previousName || '').trim();
+  const newName = String(nextName || '').trim();
+  if (!oldName || !newName || oldName.toLowerCase() === newName.toLowerCase()) return;
+
+  const featureGroups = ['traits', 'actions', 'bonusActions', 'reactions', 'legendaryActions', 'lairActions', 'mythic'];
+  featureGroups.forEach((key) => {
+    arrayOrEmpty(monsterData?.combat?.[key]).forEach((entry) => {
+      entry.description = replaceMonsterNameInText(entry.description, oldName, newName);
+    });
+  });
+
+  arrayOrEmpty(monsterData?.combat?.attacks).forEach((entry) => {
+    entry.hit = replaceMonsterNameInText(entry.hit, oldName, newName);
+    entry.rider = replaceMonsterNameInText(entry.rider, oldName, newName);
+    entry.styleNote = replaceMonsterNameInText(entry.styleNote, oldName, newName);
+  });
+
+  arrayOrEmpty(monsterData?.combat?.spellcasting).forEach((entry) => {
+    entry.description = replaceMonsterNameInText(entry.description, oldName, newName);
+  });
+}
+
+function replaceMonsterNameInText(text, oldName, newName) {
+  const source = String(text || '');
+  if (!source) return source;
+
+  let updated = source;
+  const escapedOldName = escapeRegExp(oldName);
+  const aliases = getMonsterNameAliases(oldName);
+
+  updated = updated
+    .replace(new RegExp(`\\bthe\\s+${escapedOldName}'s\\b`, 'gi'), (match) => `${startsWithUppercase(match) ? 'The' : 'the'} ${newName}'s`)
+    .replace(new RegExp(`\\b${escapedOldName}'s\\b`, 'gi'), `${newName}'s`)
+    .replace(new RegExp(`\\bthe\\s+${escapedOldName}\\b`, 'gi'), (match) => `${startsWithUppercase(match) ? 'The' : 'the'} ${newName}`)
+    .replace(new RegExp(`\\b${escapedOldName}\\b`, 'gi'), newName);
+
+  aliases.forEach((alias) => {
+    if (!alias || alias.toLowerCase() === oldName.toLowerCase()) return;
+    updated = updated.replace(new RegExp(`\\bthe\\s+${escapeRegExp(alias)}\\b`, 'gi'), (match) => `${startsWithUppercase(match) ? 'The' : 'the'} ${newName}`);
+  });
+
+  return updated;
+}
+
+function getMonsterNameAliases(name) {
+  const normalized = String(name || '').trim();
+  if (!normalized) return [];
+  const segments = normalized.split(/\s+/).filter(Boolean);
+  const aliases = [normalized];
+  if (segments.length > 1) aliases.push(segments[segments.length - 1]);
+  return aliases;
+}
+
+function startsWithUppercase(value) {
+  const firstChar = String(value || '').trim().charAt(0);
+  return firstChar === firstChar.toUpperCase() && firstChar !== firstChar.toLowerCase();
+}
+
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function addEntry(event) {
@@ -1361,6 +1429,8 @@ if (typeof globalThis !== 'undefined') {
     normalizeCrKey,
     crToNumber,
     getCrBaseline,
+    replaceMonsterNameInText,
+    synchronizeMonsterNameReferences,
   };
 }
 
