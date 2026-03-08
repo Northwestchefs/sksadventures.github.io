@@ -50,6 +50,7 @@
   const sizeEl = document.getElementById('party-size');
   const difficultyEl = document.getElementById('difficulty');
   const environmentEl = document.getElementById('environment');
+  const focusEl = document.getElementById('encounter-focus');
   const statusEl = document.getElementById('generator-status');
   const summaryEl = document.getElementById('encounter-summary');
   const resultsEl = document.getElementById('encounter-results');
@@ -293,34 +294,87 @@
     };
   }
 
-  function buildEncounterOption(pool, targetXp, attempt) {
+  function buildEncounterOption(pool, targetXp, attempt, focus = 'balanced') {
     const roster = [];
-    const maxCreatures = 2 + Math.floor(Math.random() * 3);
-    let rawXp = 0;
+    const safePool = Array.isArray(pool) ? pool : [];
 
-    while (roster.length < maxCreatures) {
-      const pick = pool[Math.floor(Math.random() * pool.length)];
-      if (!pick) {
-        break;
+    if (!safePool.length) {
+      return { id: attempt + 1, roster, rawXp: 0, adjustedXp: 0, creatureCount: 0, distance: targetXp };
+    }
+
+    if (focus === 'boss') {
+      const sortedByCr = [...safePool].sort((a, b) => b.cr - a.cr);
+      const boss = sortedByCr[0];
+      const minionPool = safePool.filter((monster) => monster.name !== boss.name).sort((a, b) => a.cr - b.cr);
+      if (boss) {
+        roster.push({ ...boss, ...getMonsterStats(boss), quantity: 1 });
       }
 
-      const quantity = Math.random() > 0.7 ? 2 : 1;
-      const existing = roster.find((entry) => entry.name === pick.name);
-      if (existing) {
-        existing.quantity += quantity;
-      } else {
-        const stats = getMonsterStats(pick);
-        roster.push({ ...pick, ...stats, quantity });
-      }
+      while (roster.length < 3 && minionPool.length) {
+        const pick = minionPool[Math.floor(Math.random() * Math.min(minionPool.length, 8))];
+        const existing = roster.find((entry) => entry.name === pick.name);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          roster.push({ ...pick, ...getMonsterStats(pick), quantity: 1 });
+        }
 
-      rawXp = roster.reduce((sum, creature) => sum + creature.xp * creature.quantity, 0);
-      const adjusted = Math.floor(rawXp * xpMultiplier(roster.reduce((sum, c) => sum + c.quantity, 0)));
-      if (adjusted > targetXp * 1.22) {
-        break;
+        const creatureCount = roster.reduce((sum, creature) => sum + creature.quantity, 0);
+        const rawXp = roster.reduce((sum, creature) => sum + creature.xp * creature.quantity, 0);
+        const adjusted = Math.floor(rawXp * xpMultiplier(creatureCount));
+        if (adjusted > targetXp * 1.25) {
+          break;
+        }
+      }
+    } else if (focus === 'swarm') {
+      const swarmPool = [...safePool].sort((a, b) => a.cr - b.cr).slice(0, Math.max(5, Math.floor(safePool.length * 0.45)));
+      const maxCreatures = 4 + Math.floor(Math.random() * 4);
+      while (roster.length < maxCreatures) {
+        const pick = swarmPool[Math.floor(Math.random() * swarmPool.length)] || safePool[Math.floor(Math.random() * safePool.length)];
+        if (!pick) break;
+        const quantity = Math.random() > 0.35 ? 2 : 1;
+        const existing = roster.find((entry) => entry.name === pick.name);
+        if (existing) {
+          existing.quantity += quantity;
+        } else {
+          roster.push({ ...pick, ...getMonsterStats(pick), quantity });
+        }
+
+        const creatureCount = roster.reduce((sum, creature) => sum + creature.quantity, 0);
+        const rawXp = roster.reduce((sum, creature) => sum + creature.xp * creature.quantity, 0);
+        const adjusted = Math.floor(rawXp * xpMultiplier(creatureCount));
+        if (adjusted > targetXp * 1.18) {
+          break;
+        }
+      }
+    } else {
+      const maxCreatures = 2 + Math.floor(Math.random() * 3);
+      while (roster.length < maxCreatures) {
+        const pick = safePool[Math.floor(Math.random() * safePool.length)];
+        if (!pick) {
+          break;
+        }
+
+        const quantity = Math.random() > 0.7 ? 2 : 1;
+        const existing = roster.find((entry) => entry.name === pick.name);
+        if (existing) {
+          existing.quantity += quantity;
+        } else {
+          const stats = getMonsterStats(pick);
+          roster.push({ ...pick, ...stats, quantity });
+        }
+
+        const creatureCount = roster.reduce((sum, c) => sum + c.quantity, 0);
+        const rawXp = roster.reduce((sum, creature) => sum + creature.xp * creature.quantity, 0);
+        const adjusted = Math.floor(rawXp * xpMultiplier(creatureCount));
+        if (adjusted > targetXp * 1.22) {
+          break;
+        }
       }
     }
 
     const creatureCount = roster.reduce((sum, creature) => sum + creature.quantity, 0);
+    const rawXp = roster.reduce((sum, creature) => sum + creature.xp * creature.quantity, 0);
     const adjustedXp = Math.floor(rawXp * xpMultiplier(creatureCount));
     const distance = Math.abs(targetXp - adjustedXp);
 
@@ -348,7 +402,8 @@
       <strong>Party:</strong> ${context.size} adventurers (level ${context.level}) •
       <strong>Target:</strong> ${context.difficulty.toUpperCase()} (${targetXp.toLocaleString()} adjusted XP) •
       <strong>Thresholds:</strong> E ${thresholds.easy.toLocaleString()} / M ${thresholds.medium.toLocaleString()} /
-      H ${thresholds.hard.toLocaleString()} / D ${thresholds.deadly.toLocaleString()}
+      H ${thresholds.hard.toLocaleString()} / D ${thresholds.deadly.toLocaleString()} •
+      <strong>Focus:</strong> ${context.focusLabel}
     `;
 
     resultsEl.innerHTML = encounters
@@ -1069,6 +1124,7 @@ ${aftermath.leadsHtml}
     const size = clamp(Number(sizeEl.value) || 1, 1, 10);
     const difficulty = difficultyEl.value;
     const environment = environmentEl.value;
+    const focus = focusEl ? focusEl.value : 'balanced';
 
     levelEl.value = String(level);
     sizeEl.value = String(size);
@@ -1082,12 +1138,13 @@ ${aftermath.leadsHtml}
       return inEnvironment && inCrRange;
     });
 
-    const options = Array.from({ length: 5 }, (_, idx) => buildEncounterOption(filteredPool, targetXp, idx))
+    const options = Array.from({ length: 6 }, (_, idx) => buildEncounterOption(filteredPool, targetXp, idx, focus))
       .filter((encounter) => encounter.roster.length > 0)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 3);
 
-    const context = { level, size, difficulty, environment };
+    const focusLabel = focus === 'boss' ? 'Boss + Minions' : focus === 'swarm' ? 'Swarm Skirmish' : 'Balanced Mix';
+    const context = { level, size, difficulty, environment, focus, focusLabel };
     const hooks = buildExpansionHooks(options, context);
 
     lastGenerated = {
