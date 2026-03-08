@@ -982,9 +982,20 @@ function getOrcRoleDefaults(role = 'brute') {
   return ORC_ROLE_DEFAULTS[role] || ORC_ROLE_DEFAULTS.brute;
 }
 
-function createOrcVariantAttack(baseAttack = {}, preferredAttackNames = []) {
+function buildTemplateSequence(preferredNames = [], library = [], count = 1) {
+  const normalizedCount = Math.max(1, Number(count) || 1);
+  const preferredUnique = Array.from(new Set(arrayOrEmpty(preferredNames).filter(Boolean)));
+  const libraryNames = library.map((entry) => entry.name).filter(Boolean);
+  const fallbackPool = libraryNames.filter((name) => !preferredUnique.includes(name));
+  const pool = preferredUnique.concat(fallbackPool);
+  const safePool = pool.length ? pool : [''];
+  return Array.from({ length: normalizedCount }, (_, index) => safePool[index % safePool.length]);
+}
+
+function createOrcVariantAttack(baseAttack = {}, preferredAttackNames = [], forcedTemplateName = '') {
   const preferredTemplates = preferredAttackNames.map((name) => pickAttackTemplateByName(name)).filter(Boolean);
-  const template = pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ATTACK_LIBRARY) || ORC_VARIANT_ATTACK_LIBRARY[0];
+  const forcedTemplate = pickAttackTemplateByName(forcedTemplateName);
+  const template = forcedTemplate || pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ATTACK_LIBRARY) || ORC_VARIANT_ATTACK_LIBRARY[0];
   const templateDamageType = String(template.damageType || 'slashing');
   const damage = String(baseAttack.damage || template.damage || '1d8+3');
   const secondaryDamage = String(baseAttack.secondaryDamage || '');
@@ -1005,9 +1016,10 @@ function createOrcVariantAttack(baseAttack = {}, preferredAttackNames = []) {
   });
 }
 
-function createOrcVariantAction(baseAction = {}, preferredActionNames = []) {
+function createOrcVariantAction(baseAction = {}, preferredActionNames = [], forcedTemplateName = '') {
   const preferredTemplates = preferredActionNames.map((name) => pickActionTemplateByName(name)).filter(Boolean);
-  const template = pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ACTION_LIBRARY) || ORC_VARIANT_ACTION_LIBRARY[0];
+  const forcedTemplate = pickActionTemplateByName(forcedTemplateName);
+  const template = forcedTemplate || pick(preferredTemplates.length ? preferredTemplates : ORC_VARIANT_ACTION_LIBRARY) || ORC_VARIANT_ACTION_LIBRARY[0];
   return normalizeCombatFeatureEntry({
     ...baseAction,
     name: template.name,
@@ -1023,21 +1035,25 @@ function applyOrcVariantCustomization(monsterData) {
   const result = monsterData && typeof monsterData === 'object' ? monsterData : createDefaultMonster();
   if (!isOrcIdentity(result.identity)) return result;
 
-  const chosenName = pick(ORC_VARIANTS) || result.identity.name || 'Orc Warrior';
+  const currentName = String(result.identity?.name || '').trim();
+  const existingVariantName = ORC_VARIANTS.find((variant) => variant.toLowerCase() === currentName.toLowerCase());
+  const chosenName = existingVariantName || (/^orc\b/i.test(currentName) ? currentName : (pick(ORC_VARIANTS) || 'Orc Warrior'));
   const profile = getOrcVariantProfile(chosenName);
   const roleDefaults = getOrcRoleDefaults(profile.role);
   const preferredAttacks = profile.attacks?.length ? profile.attacks : roleDefaults.attacks;
   const preferredActions = profile.actions?.length ? profile.actions : roleDefaults.actions;
   const attackPool = arrayOrEmpty(result?.combat?.attacks);
   const actionPool = arrayOrEmpty(result?.combat?.actions);
+  const attackTemplateSequence = buildTemplateSequence(preferredAttacks, ORC_VARIANT_ATTACK_LIBRARY, Math.max(attackPool.length, 1));
+  const actionTemplateSequence = buildTemplateSequence(preferredActions, ORC_VARIANT_ACTION_LIBRARY, Math.max(actionPool.length, 1));
 
   const updatedAttacks = attackPool.length
-    ? attackPool.map((attack, index) => (index < 2 ? createOrcVariantAttack(attack, preferredAttacks) : normalizeAttackEntry(attack)))
-    : [createOrcVariantAttack({}, preferredAttacks)];
+    ? attackPool.map((attack, index) => (index < 2 ? createOrcVariantAttack(attack, preferredAttacks, attackTemplateSequence[index]) : normalizeAttackEntry(attack)))
+    : [createOrcVariantAttack({}, preferredAttacks, attackTemplateSequence[0])];
 
   const updatedActions = actionPool.length
-    ? actionPool.map((action, index) => (index < 2 ? createOrcVariantAction(action, preferredActions) : normalizeCombatFeatureEntry(action, 'Action')))
-    : [createOrcVariantAction({}, preferredActions)];
+    ? actionPool.map((action, index) => (index < 2 ? createOrcVariantAction(action, preferredActions, actionTemplateSequence[index]) : normalizeCombatFeatureEntry(action, 'Action')))
+    : [createOrcVariantAction({}, preferredActions, actionTemplateSequence[0])];
 
   return {
     ...result,
