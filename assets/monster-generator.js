@@ -689,6 +689,14 @@ function generateRandomMonster(cr, styleKey) {
 
   const attacks = Array.from({ length: attackCount }, () => buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, styleKey, affinityProfile }));
 
+  const traitBuildContext = {
+    usedTitles: new Set(),
+    usedSuffixes: new Set(),
+    usedTemplateKinds: new Set(),
+    usedSaveAbilities: new Set(),
+    usedDescriptionOpeners: new Set(),
+  };
+
   return {
     identity: {
       ...monster.identity,
@@ -730,7 +738,18 @@ function generateRandomMonster(cr, styleKey) {
     },
     combat: {
       ...monster.combat,
-      traits: Array.from({ length: traitCount }, (_, index) => buildTrait({ profileTraits: profile.traits, name, roleFlavor, role, saveDc, proficiencyBonus, numericCr, mainDamage, index })),
+      traits: Array.from({ length: traitCount }, (_, index) => buildTrait({
+        profileTraits: profile.traits,
+        name,
+        roleFlavor,
+        role,
+        saveDc,
+        proficiencyBonus,
+        numericCr,
+        mainDamage,
+        index,
+        context: traitBuildContext,
+      })),
       actions: Array.from({ length: actionCount }, () => buildAction(profile.actions, saveDc, mainDamage, name, affinityProfile)),
       bonusActions: Array.from({ length: bonusCount }, () => buildBonusAction(name, affinityProfile)),
       reactions: Array.from({ length: reactionCount }, () => buildReaction(name, affinityProfile)),
@@ -786,12 +805,52 @@ function buildAttackBlock({ numericCr, proficiencyBonus, abilities, mainDamage, 
   };
 }
 
-function buildTrait({ profileTraits, name, roleFlavor, role, saveDc, proficiencyBonus, numericCr, mainDamage, index }) {
+function buildTrait({ profileTraits, name, roleFlavor, role, saveDc, proficiencyBonus, numericCr, mainDamage, index, context }) {
   const suffixes = ['Carapace', 'Instinct', 'Pattern', 'Aura', 'Protocol', 'Directive', 'Manifestation'];
   const roleTemplates = TRAIT_ARCHETYPES[role] || TRAIT_ARCHETYPES.brute;
-  const template = roleTemplates[index % roleTemplates.length] || pick(roleTemplates);
-  const title = `${pick(profileTraits)} ${pick(suffixes)}`;
-  const saveAbility = pick(['Strength', 'Dexterity', 'Constitution', 'Wisdom']);
+  const openerTemplates = [
+    `${name} fights with ${roleFlavor.toLowerCase()} instincts and`,
+    `In battle, ${name} leverages ${roleFlavor.toLowerCase()} tactics to`,
+    `${name} channels a ${roleFlavor.toLowerCase()} doctrine that`,
+    `${name} reveals ${roleFlavor.toLowerCase()} discipline and`,
+  ];
+
+  const usedContext = context || {};
+  usedContext.usedTitles = usedContext.usedTitles || new Set();
+  usedContext.usedSuffixes = usedContext.usedSuffixes || new Set();
+  usedContext.usedTemplateKinds = usedContext.usedTemplateKinds || new Set();
+  usedContext.usedSaveAbilities = usedContext.usedSaveAbilities || new Set();
+  usedContext.usedDescriptionOpeners = usedContext.usedDescriptionOpeners || new Set();
+
+  let availableTemplates = roleTemplates.filter((entry) => !usedContext.usedTemplateKinds.has(entry.kind));
+  if (!availableTemplates.length) availableTemplates = roleTemplates;
+  const template = pick(availableTemplates) || roleTemplates[index % roleTemplates.length] || pick(roleTemplates);
+  usedContext.usedTemplateKinds.add(template.kind);
+
+  const traitBase = pick(profileTraits);
+  let suffixPool = suffixes.filter((suffix) => !usedContext.usedSuffixes.has(suffix));
+  if (!suffixPool.length) suffixPool = suffixes;
+  const pickedSuffix = pick(suffixPool);
+  usedContext.usedSuffixes.add(pickedSuffix);
+
+  let title = `${traitBase} ${pickedSuffix}`;
+  let titleAttempts = 0;
+  while (usedContext.usedTitles.has(title) && titleAttempts < 6) {
+    title = `${traitBase} ${pick(suffixes)}`;
+    titleAttempts += 1;
+  }
+  usedContext.usedTitles.add(title);
+
+  let availableSaveAbilities = ['Strength', 'Dexterity', 'Constitution', 'Wisdom'].filter((ability) => !usedContext.usedSaveAbilities.has(ability));
+  if (!availableSaveAbilities.length) availableSaveAbilities = ['Strength', 'Dexterity', 'Constitution', 'Wisdom'];
+  const saveAbility = pick(availableSaveAbilities);
+  usedContext.usedSaveAbilities.add(saveAbility);
+
+  let availableOpeners = openerTemplates.filter((opener) => !usedContext.usedDescriptionOpeners.has(opener));
+  if (!availableOpeners.length) availableOpeners = openerTemplates;
+  const descriptionOpener = pick(availableOpeners);
+  usedContext.usedDescriptionOpeners.add(descriptionOpener);
+
   const bonusValue = Math.max(2, Math.ceil(proficiencyBonus * 1.5));
   const scalingText = template.scalesWith === 'saveDc'
     ? `Creatures can resist with a DC ${saveDc} ${saveAbility} save.`
@@ -805,7 +864,7 @@ function buildTrait({ profileTraits, name, roleFlavor, role, saveDc, proficiency
   return {
     name: title,
     category: 'Trait',
-    description: `${name} embodies a ${roleFlavor.toLowerCase()} approach to combat and ${template.effect}. ${scalingText}`.trim(),
+    description: `${descriptionOpener} ${template.effect}. ${scalingText}`.trim(),
     saveDc: template.scalesWith === 'saveDc' ? `${saveDc} ${saveAbility.slice(0, 3)}` : '',
     recharge,
     usage,
