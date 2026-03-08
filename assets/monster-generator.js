@@ -197,6 +197,7 @@ const statusEl = hasDocument ? document.getElementById('studio-status') : null;
 let monster = createDefaultMonster();
 let srdMonsters = [];
 let srdMonstersByCr = {};
+let srdLoadPromise = null;
 
 if (hasDocument && formEl && statusEl) {
   init();
@@ -267,7 +268,7 @@ function createDefaultMonster() {
 }
 
 async function init() {
-  await loadSrdMonsters();
+  await ensureSrdMonstersLoaded();
   populateSelects();
   renderForm();
   renderPreview();
@@ -590,9 +591,26 @@ function applyPreset() {
   setStatus(`Preset loaded: ${key}.`);
 }
 
-function randomFromCr() {
+async function randomFromCr() {
   const cr = document.getElementById('random-cr').value;
   const style = document.getElementById('random-style').value;
+  let randomSrdMonster = pickRandomSrdMonsterForCr(cr);
+
+  if (!randomSrdMonster) {
+    await ensureSrdMonstersLoaded(true);
+    populateSrdMonsterSelect(cr);
+    randomSrdMonster = pickRandomSrdMonsterForCr(cr);
+  }
+
+  if (randomSrdMonster) {
+    monster = importSrdMonster(randomSrdMonster, monster);
+    syncSrdSelection(cr, randomSrdMonster);
+    setStatus(`Random SRD monster loaded for CR ${cr}: ${randomSrdMonster.name}.`);
+    renderForm();
+    renderPreview();
+    return;
+  }
+
   const generated = generateRandomMonster(cr, style);
   monster = {
     ...monster,
@@ -602,6 +620,21 @@ function randomFromCr() {
   setStatus(`Random ${RANDOM_STYLES[style] || 'custom'} monster generated for CR ${cr}: ${generated.identity.name}.`);
   renderForm();
   renderPreview();
+}
+
+function pickRandomSrdMonsterForCr(cr) {
+  const list = srdMonstersByCr[normalizeCrKey(cr)] || [];
+  if (!list.length) return null;
+  return pick(list);
+}
+
+function syncSrdSelection(cr, selectedMonster) {
+  const select = document.getElementById('srd-monster-select');
+  if (!select || !selectedMonster) return;
+
+  const list = srdMonstersByCr[normalizeCrKey(cr)] || [];
+  const selectedValue = selectedMonster.index || String(list.indexOf(selectedMonster));
+  select.value = selectedValue;
 }
 
 
@@ -1612,6 +1645,14 @@ function normalizeCrKey(value) {
 
 function getCrBaseline(cr) {
   return CR_BASELINES[normalizeCrKey(cr)] || CR_BASELINES['1'];
+}
+
+async function ensureSrdMonstersLoaded(forceRefresh = false) {
+  if (!forceRefresh && srdMonsters.length) return;
+  if (!srdLoadPromise || forceRefresh) {
+    srdLoadPromise = loadSrdMonsters();
+  }
+  await srdLoadPromise;
 }
 
 async function loadSrdMonsters() {
