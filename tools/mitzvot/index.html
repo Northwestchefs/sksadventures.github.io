@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mitzvot Browser | SKS Adventures</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <style>
+      body { background: #f5f5f3; color: #1f2937; }
+      .page { width: min(1100px, 92vw); margin: 24px auto 40px; }
+      .panel { background: #fff; border: 1px solid #d1d5db; border-radius: 16px; padding: 20px; }
+      .filters { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:16px 0; }
+      input, select { width:100%; padding:10px 12px; border-radius:12px; border:1px solid #c7cad1; background:#fff; color:#111827; }
+      .summary { margin-bottom: 12px; color:#475569; }
+      .ranges { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+      .range-btn { border:1px solid #c7cad1; border-radius:999px; background:#fff; color:#334155; padding:8px 14px; cursor:pointer; }
+      .range-btn[aria-current="page"] { border-color:#3b82f6; color:#1d4ed8; font-weight:700; }
+      .cards { display:grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap:14px; }
+      .mitzvah { border:1px solid #d1d5db; border-radius:14px; padding:16px; background:#fff; }
+      .mitzvah h3 { margin:6px 0 10px; font-size: 1.25rem; color:#0f172a; }
+      .muted { color:#64748b; margin-bottom: 8px; }
+    </style>
+  </head>
+  <body>
+    <main class="page panel">
+      <h1>Mitzvot Browser</h1>
+      <p>Browse and search mitzvot with category and commandment type filters, pagination, and quick verse lookup.</p>
+
+      <div class="filters">
+        <input id="search" type="search" placeholder="Search by keyword or phrase" />
+        <select id="category"></select>
+        <select id="type"></select>
+      </div>
+
+      <p id="summary" class="summary"></p>
+      <div id="ranges" class="ranges" aria-label="Pagination"></div>
+      <section id="cards" class="cards" aria-live="polite"></section>
+    </main>
+
+    <script>
+      const pageSize = 50;
+      const seed = [
+        { id: 1, title: 'To Know There Is a God', hebrew: 'אנכי ה׳ אלוהיך', source: 'Exodus 20:2', type: 'Positive Commandment', category: 'Faith', description: 'Recognize and affirm the existence of the Creator.' },
+        { id: 2, title: 'Do Not Entertain Other Deities', hebrew: 'לא יהיה לך אלוהים אחרים', source: 'Exodus 20:3', type: 'Negative Commandment', category: 'Faith', description: 'Do not worship or accept any power as divine besides God.' },
+        { id: 3, title: 'Do Not Blaspheme the Holy Name', hebrew: 'לא תשא את שם ה׳ לשוא', source: 'Exodus 20:7', type: 'Negative Commandment', category: 'Speech', description: 'Do not misuse the Divine Name.' },
+        { id: 4, title: 'Sanctify the Sabbath', hebrew: 'זכור את יום השבת לקדשו', source: 'Exodus 20:8', type: 'Positive Commandment', category: 'Shabbat', description: 'Set apart Shabbat with rest and holiness.' }
+      ];
+
+      const categories = ['Faith', 'Speech', 'Shabbat', 'Prayer', 'Ethics', 'Family', 'Justice'];
+      const types = ['Positive Commandment', 'Negative Commandment'];
+      const mitzvot = Array.from({ length: 200 }, (_, i) => {
+        const id = i + 1;
+        if (id <= seed.length) return seed[i];
+        return {
+          id,
+          title: `Mitzvah Placeholder #${id}`,
+          hebrew: '—',
+          source: `Reference ${Math.ceil(id / 10)}:${(id % 10) || 10}`,
+          type: types[id % 2],
+          category: categories[id % categories.length],
+          description: `Description placeholder for mitzvah #${id}.`
+        };
+      });
+
+      const searchEl = document.getElementById('search');
+      const categoryEl = document.getElementById('category');
+      const typeEl = document.getElementById('type');
+      const summaryEl = document.getElementById('summary');
+      const rangesEl = document.getElementById('ranges');
+      const cardsEl = document.getElementById('cards');
+      let currentPage = 0;
+
+      function fillFilters() {
+        categoryEl.innerHTML = ['<option value="">All categories</option>', ...[...new Set(mitzvot.map((m) => m.category))].map((c) => `<option value="${c}">${c}</option>`)].join('');
+        typeEl.innerHTML = ['<option value="">All types</option>', ...[...new Set(mitzvot.map((m) => m.type))].map((t) => `<option value="${t}">${t}</option>`)].join('');
+      }
+
+      function getFiltered() {
+        const q = searchEl.value.trim().toLowerCase();
+        return mitzvot.filter((m) => {
+          if (categoryEl.value && m.category !== categoryEl.value) return false;
+          if (typeEl.value && m.type !== typeEl.value) return false;
+          if (!q) return true;
+          return [m.title, m.description, m.source, m.category, m.type].join(' ').toLowerCase().includes(q);
+        });
+      }
+
+      function render() {
+        const filtered = getFiltered();
+        const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+        if (currentPage >= pageCount) currentPage = 0;
+        const start = filtered.length === 0 ? 0 : currentPage * pageSize + 1;
+        const end = Math.min((currentPage + 1) * pageSize, filtered.length);
+
+        summaryEl.textContent = `Showing ${start}-${end} of ${filtered.length} filtered mitzvot (${mitzvot.length} total).`;
+        rangesEl.innerHTML = Array.from({ length: pageCount }, (_, i) => {
+          const s = i * pageSize + 1;
+          const e = Math.min((i + 1) * pageSize, filtered.length);
+          return `<button class="range-btn" data-page="${i}" aria-current="${i === currentPage ? 'page' : 'false'}">${s}-${e}</button>`;
+        }).join('');
+
+        cardsEl.innerHTML = filtered.slice(currentPage * pageSize, (currentPage + 1) * pageSize).map((m) => `
+          <article class="mitzvah">
+            <div class="muted">Mitzvah #${m.id}</div>
+            <h3>${m.title}</h3>
+            <p class="muted">${m.hebrew}</p>
+            <p><strong>Source:</strong> ${m.source}</p>
+            <p><strong>Type:</strong> ${m.type}</p>
+            <p><strong>Category:</strong> ${m.category}</p>
+            <p>${m.description}</p>
+          </article>
+        `).join('') || '<p>No mitzvot found.</p>';
+
+        rangesEl.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => {
+          currentPage = Number(btn.dataset.page || 0);
+          render();
+        }));
+      }
+
+      [searchEl, categoryEl, typeEl].forEach((el) => el.addEventListener('input', () => { currentPage = 0; render(); }));
+      fillFilters();
+      render();
+    </script>
+  </body>
+</html>
